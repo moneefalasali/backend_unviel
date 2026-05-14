@@ -1,0 +1,56 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --primary-bg: 26 37 83;
+    --primary-dark: 18 19 31;
+    --primary-purple: 106 93 171;
+    --accent-gold: 241 170 25;
+    --accent-lavender: 141 114 212;
+    --neutral-light: 18 19 31;
+    --neutral-white: 253 253 254;
+    --neutral-gray: 148 150 163;
+    --neutral-text: 253 253 254;
+  }
+
+  html.dark {
+    --primary-bg: 26 37 83;
+    --primary-dark: 18 19 31;
+    --primary-purple: 106 93 171;
+    --accent-gold: 241 170 25;
+    --accent-lavender: 141 114 212;
+    --neutral-light: 18 19 31;
+    --neutral-white: 253 253 254;
+    --neutral-gray: 148 150 163;
+    --neutral-text: 253 253 254;
+  }
+
+  html.light {
+    --primary-bg: 244 245 247;
+    --primary-dark: 255 255 255;
+    --primary-purple: 106 93 171;
+    --accent-gold: 241 170 25;
+    --accent-lavender: 141 114 212;
+    --neutral-light: 244 245 247;
+    --neutral-white: 17 24 39;
+    --neutral-gray: 107 114 128;
+    --neutral-text: 17 24 39;
+  }
+
+  * {
+    @apply antialiased;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-primary-bg text-neutral-white;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+}
