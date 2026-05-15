@@ -5,6 +5,7 @@ import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
 import { useAuth } from '../contexts/AuthContext';
+import { saveAnalysisHistory } from '../lib/api';
 
 interface SocialAnalysisProps {
   onNavigate: (page: string) => void;
@@ -70,6 +71,20 @@ export const SocialAnalysis = ({ onNavigate }: SocialAnalysisProps) => {
 
       const data = await response.json();
       setResult(data);
+
+      if (user) {
+        await saveAnalysisHistory({
+          media_type: 'social',
+          content: url,
+          result_status: data.classification?.toUpperCase() || 'UNKNOWN',
+          confidence_score: data.confidence || 0,
+          explanation: data.explanation || '',
+          metadata: {
+            url: url,
+            platform: data.platform || 'unknown',
+          },
+        });
+      }
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -147,7 +162,14 @@ export const SocialAnalysis = ({ onNavigate }: SocialAnalysisProps) => {
                     disabled={analyzing}
                   />
                   <Button onClick={analyzePost} disabled={analyzing || !url} className="w-full">
-                    {analyzing ? <Loader2 className="animate-spin" /> : 'Analyze Now'}
+                    {analyzing ? (
+                      <div key="analyzing" className="flex items-center justify-center">
+                        <Loader2 className="animate-spin mr-2" size={18} />
+                        Analyzing...
+                      </div>
+                    ) : (
+                      <span key="analyze">Analyze Now</span>
+                    )}
                   </Button>
                 </div>
               </Card>
@@ -208,7 +230,7 @@ export const SocialAnalysis = ({ onNavigate }: SocialAnalysisProps) => {
                   <div className="grid md:grid-cols-2 gap-8 mb-8">
                     <div>
                       <div className="flex justify-between mb-2">
-                        <span className="text-neutral-white font-medium">AI Probability</span>
+                        <span className="text-neutral-white font-medium">AI Confidence</span>
                         <span className="text-accent-gold font-bold">{result.overall_ai_probability}%</span>
                       </div>
                       <div className="w-full bg-primary-dark rounded-full h-3">
@@ -220,7 +242,7 @@ export const SocialAnalysis = ({ onNavigate }: SocialAnalysisProps) => {
                     </div>
                     <div>
                       <div className="flex justify-between mb-2">
-                        <span className="text-neutral-white font-medium">Human Probability</span>
+                        <span className="text-neutral-white font-medium">Human Confidence</span>
                         <span className="text-green-400 font-bold">{result.human_probability}%</span>
                       </div>
                       <div className="w-full bg-primary-dark rounded-full h-3">

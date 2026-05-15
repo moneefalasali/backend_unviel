@@ -1,16 +1,19 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { supabase } from '../lib/supabase';
 import { useAuth } from './AuthContext';
+import {
+  activateSubscription as activateSubscriptionApi,
+  cancelSubscription as cancelSubscriptionApi,
+  fetchUserProfile,
+} from '../lib/api';
 
 type PlanType = 'free' | 'plus';
 type SubscriptionStatus = 'active' | 'cancelled' | 'expired';
 
 interface Subscription {
-  id: string;
   plan_type: PlanType;
-  status: SubscriptionStatus;
-  started_at: string;
-  expires_at: string | null;
+  subscription_status: SubscriptionStatus;
+  subscription_started_at: string | null;
+  subscription_expires_at: string | null;
 }
 
 interface SubscriptionContextType {
@@ -37,32 +40,17 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
     }
 
     try {
-      const { data, error } = await supabase
-        .from('subscriptions')
-        .select('*')
-        .eq('user_id', user.id)
-        .maybeSingle();
+      const profile = await fetchUserProfile();
 
-      if (error) throw error;
-
-      if (data) {
-        setSubscription(data);
-      } else {
-        const { data: newSub, error: insertError } = await supabase
-          .from('subscriptions')
-          .insert({
-            user_id: user.id,
-            plan_type: 'free',
-            status: 'active',
-          })
-          .select()
-          .single();
-
-        if (insertError) throw insertError;
-        setSubscription(newSub);
-      }
+      setSubscription({
+        plan_type: (profile.plan_type as PlanType) || 'free',
+        subscription_status: (profile.subscription_status as SubscriptionStatus) || 'active',
+        subscription_started_at: profile.subscription_started_at ?? null,
+        subscription_expires_at: profile.subscription_expires_at ?? null,
+      });
     } catch (error) {
       console.error('Failed to fetch subscription:', error);
+      setSubscription(null);
     } finally {
       setLoading(false);
     }
@@ -72,23 +60,13 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
     if (!user) return;
 
     try {
-      const expiresAt = new Date();
-      expiresAt.setMonth(expiresAt.getMonth() + 1);
-
-      const { data, error } = await supabase
-        .from('subscriptions')
-        .update({
-          plan_type: 'plus',
-          status: 'active',
-          started_at: new Date().toISOString(),
-          expires_at: expiresAt.toISOString(),
-        })
-        .eq('user_id', user.id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      setSubscription(data);
+      const profile = await activateSubscriptionApi();
+      setSubscription({
+        plan_type: (profile.plan_type as PlanType) || 'plus',
+        subscription_status: (profile.subscription_status as SubscriptionStatus) || 'active',
+        subscription_started_at: profile.subscription_started_at ?? null,
+        subscription_expires_at: profile.subscription_expires_at ?? null,
+      });
     } catch (error) {
       console.error('Failed to activate subscription:', error);
       throw error;
@@ -99,18 +77,13 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
     if (!user) return;
 
     try {
-      const { data, error } = await supabase
-        .from('subscriptions')
-        .update({
-          plan_type: 'free',
-          status: 'cancelled',
-        })
-        .eq('user_id', user.id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      setSubscription(data);
+      const profile = await cancelSubscriptionApi();
+      setSubscription({
+        plan_type: (profile.plan_type as PlanType) || 'free',
+        subscription_status: (profile.subscription_status as SubscriptionStatus) || 'cancelled',
+        subscription_started_at: profile.subscription_started_at ?? null,
+        subscription_expires_at: profile.subscription_expires_at ?? null,
+      });
     } catch (error) {
       console.error('Failed to cancel subscription:', error);
       throw error;
@@ -125,7 +98,7 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
     fetchSubscription();
   }, [user]);
 
-  const isUnlimited = subscription?.plan_type === 'plus' && subscription?.status === 'active';
+  const isUnlimited = subscription?.plan_type === 'plus' && subscription?.subscription_status === 'active';
 
   return (
     <SubscriptionContext.Provider

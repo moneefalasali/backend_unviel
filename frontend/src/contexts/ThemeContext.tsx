@@ -1,5 +1,4 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { supabase } from '../lib/supabase';
 
 type Theme = 'dark' | 'light';
 
@@ -30,19 +29,6 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
     setThemeState(nextTheme);
     localStorage.setItem('theme', nextTheme);
     applyTheme(nextTheme);
-
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        await supabase.from('user_preferences').upsert({
-          id: user.id,
-          theme: nextTheme,
-          updated_at: new Date().toISOString(),
-        });
-      }
-    } catch (error) {
-      console.error('Failed to save theme preference:', error);
-    }
   };
 
   const toggleTheme = () => setTheme(theme === 'dark' ? 'light' : 'dark');

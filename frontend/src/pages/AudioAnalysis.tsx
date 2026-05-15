@@ -1,11 +1,12 @@
 import { useState, useRef } from 'react';
-import { ArrowLeft, Music, Upload, Loader2, AlertCircle, X, Minus } from 'lucide-react';
+import { ArrowLeft, Music, Upload, Loader2, AlertCircle, AlertTriangle, CheckCircle, X, Minus } from 'lucide-react';
 import { Logo } from '../components/Logo';
+import { AnalysisResult } from '../lib/types';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { useAuth } from '../contexts/AuthContext';
-import { supabase } from '../lib/supabase';
 import { analyzeAudioContent } from '../lib/analyzeAudioContent';
+import { saveAnalysisHistory } from '../lib/api';
 
 interface AudioAnalysisProps {
   onNavigate: (page: string) => void;
@@ -16,18 +17,7 @@ export const AudioAnalysis = ({ onNavigate }: AudioAnalysisProps) => {
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [result, setResult] = useState<{
-    score: number;
-    label: 'Limited Demo Estimate';
-    explanation: string;
-    signals: {
-      name: string;
-      impact: 'neutral';
-      value: string;
-    }[];
-    limitations: string[];
-  } | null>(null);
+  const [result, setResult] = useState<AnalysisResult | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileSelect = (selectedFile: File) => {
@@ -62,45 +52,29 @@ export const AudioAnalysis = ({ onNavigate }: AudioAnalysisProps) => {
     if (!file) return;
 
     setAnalyzing(true);
-    setProgress(0);
-
-    const interval = setInterval(() => {
-      setProgress(prev => {
-        if (prev >= 95) {
-          clearInterval(interval);
-          return 95;
-        }
-        return prev + 5;
-      });
-    }, 180);
-
-    await new Promise(resolve => setTimeout(resolve, 3500));
-
-    clearInterval(interval);
-    setProgress(100);
 
     try {
       const analysisResult = await analyzeAudioContent(file);
-      setResult(analysisResult as any);
+      setResult(analysisResult);
+
+      if (user) {
+        await saveAnalysisHistory({
+          media_type: 'audio',
+          content: file.name,
+          result_status: analysisResult.label.toUpperCase(),
+          confidence_score: analysisResult.score,
+          explanation: analysisResult.explanation,
+          metadata: {
+            file_name: file.name,
+            file_size: file.size,
+          },
+        });
+      }
     } catch (error) {
       console.error("Audio analysis failed:", error);
       alert("Failed to analyze audio. Please try again.");
-    }
-    setAnalyzing(false);
-
-    if (user) {
-      await supabase.from('analysis_history').insert({
-        user_id: user.id,
-        media_type: 'audio',
-        content: file.name,
-        result_status: result?.label || 'DEMO',
-        confidence_score: result?.score || 0,
-        explanation: result?.explanation || '',
-        metadata: {
-          file_name: file.name,
-          file_size: file.size,
-        },
-      });
+    } finally {
+      setAnalyzing(false);
     }
   };
 
@@ -108,20 +82,54 @@ export const AudioAnalysis = ({ onNavigate }: AudioAnalysisProps) => {
     setFile(null);
     setPreview(null);
     setResult(null);
-    setProgress(0);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
   };
 
   const getStatusConfig = () => {
-    return {
+    if (!result) return {
       icon: AlertCircle,
       color: 'text-yellow-400',
       bgColor: 'bg-yellow-500/10',
       borderColor: 'border-yellow-500',
-      label: 'Limited Demo Estimate (Metadata Only)',
+      label: 'Unknown',
     };
+
+    switch (result.label) {
+      case 'High':
+        return {
+          icon: AlertCircle,
+          color: 'text-red-400',
+          bgColor: 'bg-red-500/10',
+          borderColor: 'border-red-500',
+          label: 'High AI Confidence',
+        };
+      case 'Medium':
+        return {
+          icon: AlertTriangle,
+          color: 'text-yellow-400',
+          bgColor: 'bg-yellow-500/10',
+          borderColor: 'border-yellow-500',
+          label: 'Medium AI Confidence',
+        };
+      case 'Low':
+        return {
+          icon: CheckCircle,
+          color: 'text-green-400',
+          bgColor: 'bg-green-500/10',
+          borderColor: 'border-green-500',
+          label: 'Low AI Confidence',
+        };
+      default:
+        return {
+          icon: AlertCircle,
+          color: 'text-yellow-400',
+          bgColor: 'bg-yellow-500/10',
+          borderColor: 'border-yellow-500',
+          label: 'Unknown',
+        };
+    }
   };
 
   return (
@@ -152,7 +160,7 @@ export const AudioAnalysis = ({ onNavigate }: AudioAnalysisProps) => {
             Audio Content Analysis
           </h1>
           <p className="text-xl text-neutral-gray">
-            Upload audio to analyze speech patterns and estimate synthetic generation likelihood
+            Upload audio to analyze speech patterns and confirm synthetic generation.
           </p>
         </div>
 
@@ -230,17 +238,11 @@ export const AudioAnalysis = ({ onNavigate }: AudioAnalysisProps) => {
 
               {analyzing && (
                 <div className="bg-primary-bg rounded-lg p-4 mb-4">
-                  <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center justify-center">
+                    <Loader2 className="animate-spin mr-2 text-accent-gold" size={24} />
                     <span className="text-neutral-white text-sm font-medium">
-                      Analyzing frequencies and patterns...
+                      Analyzing audio content...
                     </span>
-                    <span className="text-accent-gold font-bold">{progress}%</span>
-                  </div>
-                  <div className="w-full bg-primary-dark rounded-full h-2">
-                    <div
-                      className="h-2 rounded-full bg-accent-gold transition-all duration-300"
-                      style={{ width: `${progress}%` }}
-                    />
                   </div>
                 </div>
               )}
@@ -251,12 +253,12 @@ export const AudioAnalysis = ({ onNavigate }: AudioAnalysisProps) => {
                 </Button>
                 <Button onClick={analyzeAudio} disabled={analyzing} fullWidth>
                   {analyzing ? (
-                    <>
+                    <div key="analyzing" className="flex items-center justify-center">
                       <Loader2 className="animate-spin mr-2" size={18} />
                       Analyzing Audio...
-                    </>
+                    </div>
                   ) : (
-                    'Analyze Audio'
+                    <span key="analyze">Analyze Audio</span>
                   )}
                 </Button>
               </div>
@@ -265,23 +267,7 @@ export const AudioAnalysis = ({ onNavigate }: AudioAnalysisProps) => {
         </Card>
 
         {result && (
-          <>
-            <Card className="p-6 mb-6 bg-red-500/10 border-2 border-red-500">
-              <div className="flex items-start gap-3">
-                <AlertCircle className="text-red-400 flex-shrink-0 mt-1" size={24} />
-                <div>
-                  <h3 className="text-lg font-semibold text-red-400 mb-2">
-                    Critical Limitation Notice
-                  </h3>
-                  <p className="text-neutral-gray text-sm leading-relaxed">
-                    This is a metadata-only demo estimate. Authentic voice cloning detection requires backend processing
-                    with spectral analysis and frequency forensics. This result should NOT be used for any serious verification.
-                  </p>
-                </div>
-              </div>
-            </Card>
-
-            <Card className={`p-8 border-2 ${getStatusConfig().borderColor} ${getStatusConfig().bgColor}`}>
+          <Card className={`p-8 border-2 ${getStatusConfig().borderColor} ${getStatusConfig().bgColor}`}>
               <div className="flex items-start gap-4 mb-6">
                 {(() => {
                   const StatusIcon = getStatusConfig().icon;
@@ -301,6 +287,14 @@ export const AudioAnalysis = ({ onNavigate }: AudioAnalysisProps) => {
                 <p className="text-neutral-gray leading-relaxed">
                   {result.explanation}
                 </p>
+                {result.analysisSource && (
+                  <p className="text-neutral-gray text-sm mt-3">
+                    <strong>Analysis Source:</strong> {result.analysisSource}
+                    {result.primaryService && result.secondaryService && (
+                      <span> — Primary: {result.primaryService}, Secondary: {result.secondaryService}</span>
+                    )}
+                  </p>
+                )}
               </div>
 
               <div className="mb-6 border-t border-primary-purple/30 pt-6">
@@ -337,7 +331,6 @@ export const AudioAnalysis = ({ onNavigate }: AudioAnalysisProps) => {
                 </ul>
               </div>
             </Card>
-          </>
         )}
       </div>
     </div>

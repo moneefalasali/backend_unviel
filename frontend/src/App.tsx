@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { LanguageProvider } from './contexts/LanguageContext';
 import { SubscriptionProvider } from './contexts/SubscriptionContext';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { Landing } from './pages/Landing';
 import { SignUp } from './pages/SignUp';
 import { Login } from './pages/Login';
@@ -46,8 +47,8 @@ function AppContent() {
     }
   }, [user, loading, currentPage]);
 
-  const navigate = (page: Page) => {
-    setCurrentPage(page);
+  const navigate = (page: string) => {
+    setCurrentPage(page as Page);
   };
 
   if (loading) {
@@ -95,15 +96,17 @@ function AppContent() {
 
 function App() {
   return (
-    <ThemeProvider>
-      <LanguageProvider>
-        <AuthProvider>
-          <SubscriptionProvider>
-            <AppContent />
-          </SubscriptionProvider>
-        </AuthProvider>
-      </LanguageProvider>
-    </ThemeProvider>
+    <ErrorBoundary>
+      <ThemeProvider>
+        <LanguageProvider>
+          <AuthProvider>
+            <SubscriptionProvider>
+              <AppContent />
+            </SubscriptionProvider>
+          </AuthProvider>
+        </LanguageProvider>
+      </ThemeProvider>
+    </ErrorBoundary>
   );
 }
 

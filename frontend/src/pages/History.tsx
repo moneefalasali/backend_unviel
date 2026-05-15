@@ -3,7 +3,7 @@ import { ArrowLeft, FileText, Image, Video, Music, Calendar, TrendingUp } from '
 import { Logo } from '../components/Logo';
 import { Card } from '../components/Card';
 import { useAuth } from '../contexts/AuthContext';
-import { supabase, AnalysisHistory } from '../lib/supabase';
+import { AnalysisHistory, fetchAnalysisHistory } from '../lib/api';
 
 interface HistoryProps {
   onNavigate: (page: string) => void;
@@ -20,16 +20,14 @@ export const History = ({ onNavigate }: HistoryProps) => {
   }, [user]);
 
   const loadHistory = async () => {
-    if (!user) return;
+    if (!user) {
+      setHistory([]);
+      setLoading(false);
+      return;
+    }
 
     try {
-      const { data, error } = await supabase
-        .from('analysis_history')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
+      const data = await fetchAnalysisHistory();
       setHistory(data || []);
     } catch (error) {
       console.error('Error loading history:', error);

@@ -2,12 +2,14 @@ import { ButtonHTMLAttributes } from 'react';
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'primary' | 'secondary' | 'outline';
+  size?: 'sm' | 'md' | 'lg';
   fullWidth?: boolean;
 }
 
 export const Button = ({
   children,
   variant = 'primary',
+  size = 'md',
   fullWidth = false,
   className = '',
   ...props
@@ -21,10 +23,16 @@ export const Button = ({
   };
 
   const widthClass = fullWidth ? 'w-full' : '';
+  const sizeClass =
+    size === 'sm'
+      ? 'px-4 py-2 text-sm'
+      : size === 'lg'
+      ? 'px-8 py-4 text-base'
+      : 'px-6 py-3 text-base';
 
   return (
     <button
-      className={`${baseStyles} ${variants[variant]} ${widthClass} ${className}`}
+      className={`${baseStyles} ${sizeClass} ${variants[variant]} ${widthClass} ${className}`}
       {...props}
     >
       {children}

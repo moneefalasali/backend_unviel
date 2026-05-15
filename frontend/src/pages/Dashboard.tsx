@@ -22,7 +22,7 @@ export const Dashboard = ({ onNavigate }: DashboardProps) => {
       id: 'text',
       title: t('text'),
       icon: FileText,
-      description: 'Analyze linguistic patterns and estimate AI assistance',
+      description: 'Analyze linguistic patterns and confirm AI assistance',
       color: 'from-blue-500 to-blue-700',
     },
     {

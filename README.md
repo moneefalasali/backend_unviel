@@ -69,10 +69,12 @@ To get this project up and running locally, follow these steps:
     php artisan key:generate
     ```
 
-5.  **Edit the `.env` file** and fill in your API keys for the detection services. You will need API keys for:
-    -   `WASITAI_API_KEY` (for image detection)
-    -   `GPTZERO_API_KEY` (for text detection)
-    -   `AUDIO_DETECTION_API_KEY` (for audio detection - e.g., Hive Moderation, ElevenLabs, Resemble AI)
+5.  **Edit the `.env` file** and fill in your API keys for the detection services. The backend can work fully with OpenAI alone if you do not have other service keys.
+    -   `OPENAI_API_KEY` (preferred for text, audio transcription/classification, and optional image analysis)
+    -   `WASITAI_API_KEY` (optional, for image detection if you want a dedicated image service)
+    -   `GPTZERO_API_KEY` (optional, for dedicated text detection)
+    -   `AUDIO_DETECTION_API_KEY` (optional, if you have a specific audio detection provider)
+    -   `AUDIO_DETECTION_URL` (optional: URL for a custom audio detection service; not a standalone service by itself)
 
     Example `.env` content:
     ```
@@ -129,9 +131,12 @@ To get this project up and running locally, follow these steps:
     VITE_PUSHER_APP_KEY="${PUSHER_APP_KEY}"
     VITE_PUSHER_APP_CLUSTER="${PUSHER_APP_CLUSTER}"
 
+    OPENAI_API_KEY=your_openai_api_key
+    OPENAI_BASE_URL=https://api.openai.com
     WASITAI_API_KEY=your_wasitai_api_key
     GPTZERO_API_KEY=your_gptzero_api_key
     AUDIO_DETECTION_API_KEY=your_audio_detection_api_key
+    AUDIO_DETECTION_URL=https://example-audio-detection.com/endpoint  # optional, only if you use a dedicated audio detection provider
     ```
 
 6.  **Run the Laravel backend server**:
@@ -149,8 +154,6 @@ To get this project up and running locally, follow these steps:
 
 2.  **Ensure your `.env` file is configured** to point to the new backend. The `VITE_API_URL` should be set to `http://localhost:8000/api`.
     ```
-    VITE_SUPABASE_URL=your_supabase_url_here
-    VITE_SUPABASE_ANON_KEY=your_supabase_anon_key_here
     VITE_API_URL=http://localhost:8000/api
     ```
 
@@ -171,16 +174,17 @@ The project uses environment variables for sensitive information and configurati
 
 ### Backend (`backend/.env`)
 
+-   `OPENAI_API_KEY`: API key for the OpenAI service. This is the preferred fallback for text, audio transcription/classification, and optional image analysis.
+-   `OPENAI_BASE_URL`: OpenAI API base URL (defaults to `https://api.openai.com`).
 -   `WASITAI_API_KEY`: API key for the image detection service (e.g., WasItAI).
 -   `GPTZERO_API_KEY`: API key for the text detection service (e.g., GPTZero).
 -   `AUDIO_DETECTION_API_KEY`: API key for the audio detection service (e.g., Hive Moderation, ElevenLabs, Resemble AI).
+-   `AUDIO_DETECTION_URL`: Optional custom audio detection service endpoint when using `AUDIO_DETECTION_API_KEY`.
 -   `APP_PORT`: The port on which the Laravel backend will run (default: `8000`).
 -   `APP_HOST`: The host address for the Laravel backend (default: `0.0.0.0`).
 
 ### Frontend (`frontend/.env`)
 
--   `VITE_SUPABASE_URL`: Your Supabase project URL.
--   `VITE_SUPABASE_ANON_KEY`: Your Supabase anonymous key.
 -   `VITE_API_URL`: The base URL for the backend API (e.g., `http://localhost:8000/api`).
 
 ## 8. Running Locally

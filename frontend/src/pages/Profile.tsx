@@ -6,7 +6,7 @@ import { Input } from '../components/Input';
 import { Select } from '../components/Select';
 import { Button } from '../components/Button';
 import { useAuth } from '../contexts/AuthContext';
-import { supabase } from '../lib/supabase';
+import { updateUserProfile } from '../lib/api';
 
 interface ProfileProps {
   onNavigate: (page: string) => void;
@@ -27,8 +27,8 @@ export const Profile = ({ onNavigate }: ProfileProps) => {
     if (profile) {
       setFormData({
         fullName: profile.full_name,
-        gender: profile.gender,
-        age: profile.age.toString(),
+        gender: profile.gender || '',
+        age: profile.age !== null && profile.age !== undefined ? profile.age.toString() : '',
       });
     }
   }, [profile]);
@@ -42,16 +42,11 @@ export const Profile = ({ onNavigate }: ProfileProps) => {
     setSuccess(false);
 
     try {
-      const { error: updateError } = await supabase
-        .from('user_profiles')
-        .update({
-          full_name: formData.fullName,
-          gender: formData.gender,
-          age: parseInt(formData.age),
-        })
-        .eq('id', user.id);
-
-      if (updateError) throw updateError;
+      await updateUserProfile({
+        full_name: formData.fullName,
+        gender: formData.gender,
+        age: parseInt(formData.age),
+      });
 
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);

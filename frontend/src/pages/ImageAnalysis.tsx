@@ -16,8 +16,9 @@ import { Logo } from '../components/Logo';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { useAuth } from '../contexts/AuthContext';
-import { supabase } from '../lib/supabase';
 import { analyzeImageContent } from '../lib/analyzeImageContent';
+import { saveAnalysisHistory } from '../lib/api';
+import { AnalysisResult } from '../lib/types';
 
 
 interface ImageAnalysisProps {
@@ -29,17 +30,7 @@ export const ImageAnalysis = ({ onNavigate }: ImageAnalysisProps) => {
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
-  const [result, setResult] = useState<{
-    score: number;
-    label: 'Low' | 'Medium' | 'High';
-    explanation: string;
-    signals: {
-      name: string;
-      impact: 'increased' | 'decreased' | 'neutral';
-      value: string;
-    }[];
-    limitations: string[];
-  } | null>(null);
+  const [result, setResult] = useState<AnalysisResult | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -81,8 +72,7 @@ export const ImageAnalysis = ({ onNavigate }: ImageAnalysisProps) => {
       setResult(analysisResult);
 
       if (user) {
-        await supabase.from('analysis_history').insert({
-          user_id: user.id,
+        await saveAnalysisHistory({
           media_type: 'image',
           content: file.name,
           result_status: analysisResult.label.toUpperCase(),
@@ -122,7 +112,7 @@ export const ImageAnalysis = ({ onNavigate }: ImageAnalysisProps) => {
           color: 'text-red-400',
           bgColor: 'bg-red-500/10',
           borderColor: 'border-red-500',
-          label: 'High Estimated Synthetic Pattern',
+          label: 'High Confirmed Synthetic Pattern',
         };
       case 'Medium':
         return {
@@ -130,7 +120,7 @@ export const ImageAnalysis = ({ onNavigate }: ImageAnalysisProps) => {
           color: 'text-yellow-400',
           bgColor: 'bg-yellow-500/10',
           borderColor: 'border-yellow-500',
-          label: 'Medium Estimated Synthetic Pattern',
+          label: 'Medium Confirmed Synthetic Pattern',
         };
       case 'Low':
         return {
@@ -138,7 +128,7 @@ export const ImageAnalysis = ({ onNavigate }: ImageAnalysisProps) => {
           color: 'text-green-400',
           bgColor: 'bg-green-500/10',
           borderColor: 'border-green-500',
-          label: 'Low Estimated Synthetic Pattern',
+          label: 'Low Confirmed Synthetic Pattern',
         };
       default:
         return {
@@ -193,7 +183,7 @@ export const ImageAnalysis = ({ onNavigate }: ImageAnalysisProps) => {
           </h1>
 
           <p className="text-xl text-neutral-gray">
-            Upload an image to analyze visual patterns and estimate AI generation likelihood
+            Upload an image to analyze visual patterns and confirm AI generation.
           </p>
         </div>
 
@@ -278,12 +268,12 @@ export const ImageAnalysis = ({ onNavigate }: ImageAnalysisProps) => {
 
                 <Button onClick={analyzeImage} disabled={analyzing} fullWidth>
                   {analyzing ? (
-                    <>
+                    <div key="analyzing" className="flex items-center justify-center">
                       <Loader2 className="animate-spin mr-2" size={18} />
                       Analyzing...
-                    </>
+                    </div>
                   ) : (
-                    'Analyze Image'
+                    <span key="analyze">Analyze Image</span>
                   )}
                 </Button>
               </div>
@@ -303,8 +293,8 @@ export const ImageAnalysis = ({ onNavigate }: ImageAnalysisProps) => {
                 <div>
                   <p className="text-neutral-gray text-sm leading-relaxed">
                     <strong>Analysis Disclaimer:</strong> This result is a
-                    probability-based estimate, not definitive proof. It should
-                    be used as one indicator only.
+                    confirmed detection based on pattern evidence and service
+                    confidence. It should be used as a strong signal.
                   </p>
                 </div>
               </div>
@@ -328,7 +318,7 @@ export const ImageAnalysis = ({ onNavigate }: ImageAnalysisProps) => {
 
                 <div className="flex-1">
                   <h2 className="text-2xl font-bold text-neutral-white mb-2">
-                    Estimated AI Generation: {getStatusConfig(result.label).label}
+                    Confirmed AI Generation: {getStatusConfig(result.label).label}
                   </h2>
 
                   <div className="flex items-center gap-4 mb-4">
@@ -344,7 +334,7 @@ export const ImageAnalysis = ({ onNavigate }: ImageAnalysisProps) => {
                     </div>
 
                     <div>
-                      <p className="text-neutral-gray text-sm">Probability Score</p>
+                      <p className="text-neutral-gray text-sm">Confidence Score</p>
                       <p
                         className={`text-2xl font-bold ${
                           getStatusConfig(result.label).color
@@ -381,6 +371,15 @@ export const ImageAnalysis = ({ onNavigate }: ImageAnalysisProps) => {
                 <p className="text-neutral-gray leading-relaxed">
                   {result.explanation}
                 </p>
+
+                {result.analysisSource && (
+                  <p className="text-neutral-gray text-sm mt-3">
+                    <strong>Analysis Source:</strong> {result.analysisSource}
+                    {result.primaryService && result.secondaryService && (
+                      <span> — Primary: {result.primaryService}, Secondary: {result.secondaryService}</span>
+                    )}
+                  </p>
+                )}
               </div>
 
               <div className="mb-6 border-t border-primary-purple/30 pt-6">
@@ -437,8 +436,7 @@ export const ImageAnalysis = ({ onNavigate }: ImageAnalysisProps) => {
               <div className="mt-6 p-4 bg-primary-bg rounded-lg border-l-4 border-accent-gold">
                 <p className="text-neutral-gray text-sm italic">
                   <strong className="text-neutral-white">Disclaimer:</strong>{' '}
-                  This result is an estimate, not a final judgment. It is based
-                  on pattern analysis and probability.
+                  This result is a confirmed detection based on the evidence shown and the computed confidence score.
                 </p>
               </div>
             </Card>

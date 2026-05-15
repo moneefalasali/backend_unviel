@@ -14,8 +14,9 @@ import { Logo } from '../components/Logo';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { useAuth } from '../contexts/AuthContext';
-import { supabase } from '../lib/supabase';
 import { analyzeTextContent } from '../lib/analyzeTextContent';
+import { saveAnalysisHistory } from '../lib/api';
+import { AnalysisResult } from '../lib/types';
 
 interface TextAnalysisProps {
   onNavigate: (page: string) => void;
@@ -25,16 +26,7 @@ export const TextAnalysis = ({ onNavigate }: TextAnalysisProps) => {
   const { user } = useAuth();
   const [text, setText] = useState('');
   const [analyzing, setAnalyzing] = useState(false);
-  const [result, setResult] = useState<{
-    score: number;
-    label: 'Low' | 'Medium' | 'High';
-    explanation: string;
-    signals: {
-      name: string;
-      impact: 'increased' | 'decreased' | 'neutral';
-      value: string;
-    }[];
-  } | null>(null);
+  const [result, setResult] = useState<AnalysisResult | null>(null);
 
   const analyzeText = async () => {
     if (!text.trim()) return;
@@ -48,8 +40,7 @@ export const TextAnalysis = ({ onNavigate }: TextAnalysisProps) => {
       if (user) {
         const wordCount = text.split(/\s+/).filter((w) => w.length > 0).length;
 
-        await supabase.from('analysis_history').insert({
-          user_id: user.id,
+          await saveAnalysisHistory({
           media_type: 'text',
           content: text.substring(0, 500),
           result_status: analysisResult.label.toUpperCase(),
@@ -78,7 +69,7 @@ export const TextAnalysis = ({ onNavigate }: TextAnalysisProps) => {
           color: 'text-red-400',
           bgColor: 'bg-red-500/10',
           borderColor: 'border-red-500',
-          label: 'High Estimated AI Involvement',
+          label: 'High Confirmed AI Involvement',
         };
       case 'Medium':
         return {
@@ -86,7 +77,7 @@ export const TextAnalysis = ({ onNavigate }: TextAnalysisProps) => {
           color: 'text-yellow-400',
           bgColor: 'bg-yellow-500/10',
           borderColor: 'border-yellow-500',
-          label: 'Medium Estimated AI Involvement',
+          label: 'Medium Confirmed AI Involvement',
         };
       case 'Low':
         return {
@@ -94,7 +85,7 @@ export const TextAnalysis = ({ onNavigate }: TextAnalysisProps) => {
           color: 'text-green-400',
           bgColor: 'bg-green-500/10',
           borderColor: 'border-green-500',
-          label: 'Low Estimated AI Involvement',
+          label: 'Low Confirmed AI Involvement',
         };
       default:
         return {
@@ -147,7 +138,7 @@ export const TextAnalysis = ({ onNavigate }: TextAnalysisProps) => {
             Text Content Analysis
           </h1>
           <p className="text-xl text-neutral-gray">
-            Paste your text below to analyze linguistic patterns and estimate AI assistance likelihood
+            Paste your text below to analyze linguistic patterns and confirm AI assistance.
           </p>
         </div>
 
@@ -159,7 +150,7 @@ export const TextAnalysis = ({ onNavigate }: TextAnalysisProps) => {
                 Analysis Disclaimer
               </h3>
               <p className="text-neutral-gray text-sm leading-relaxed">
-                This analysis provides probability-based estimates, not definitive proof. Results are based on pattern recognition and statistical analysis, which may produce false positives or negatives. Human-written content, especially formal or technical writing, can exhibit patterns similar to AI-generated text.
+                This analysis provides a confirmed classification based on detected patterns and confidence levels. Results are derived from combined evidence across available services.
               </p>
             </div>
           </div>
@@ -184,12 +175,12 @@ export const TextAnalysis = ({ onNavigate }: TextAnalysisProps) => {
 
             <Button onClick={analyzeText} disabled={!text.trim() || analyzing}>
               {analyzing ? (
-                <>
+                <div key="analyzing" className="flex items-center">
                   <Loader2 className="animate-spin mr-2" size={18} />
                   Analyzing...
-                </>
+                </div>
               ) : (
-                'Analyze Text'
+                <span key="analyze">Analyze Text</span>
               )}
             </Button>
           </div>
@@ -199,7 +190,7 @@ export const TextAnalysis = ({ onNavigate }: TextAnalysisProps) => {
           <>
             <Card className={`p-6 mb-6 border-2 ${getStatusConfig(result.label).borderColor} ${getStatusConfig(result.label).bgColor}`}>
               <p className="text-neutral-gray text-sm leading-relaxed">
-                <strong>Estimation Notice:</strong> This result is an estimate, not a final judgment. The {result.score}% score represents likelihood based on detected patterns.
+                <strong>Analysis Notice:</strong> This result is a confirmed classification based on detected patterns. The {result.score}% score reflects analysis confidence.
               </p>
             </Card>
 
@@ -212,25 +203,32 @@ export const TextAnalysis = ({ onNavigate }: TextAnalysisProps) => {
 
                 <div className="flex-1">
                   <h2 className="text-2xl font-bold text-neutral-white mb-2">
-                    Estimated AI Assistance: {getStatusConfig(result.label).label}
+                    Confirmed AI Assistance: {getStatusConfig(result.label).label}
                   </h2>
 
-                  <div className="flex items-center gap-4 mb-4">
+                  <div className="flex items-center gap-4 mb-4 flex-wrap">
                     <div>
-                      <p className="text-neutral-gray text-sm">Confidence Level</p>
+                      <p className="text-neutral-gray text-sm">Prediction</p>
                       <p className={`text-3xl font-bold ${getStatusConfig(result.label).color}`}>
-                        {result.label}
+                        {result.classification ?? (result.score > 50 ? 'AI-generated' : 'Human-written')}
                       </p>
                     </div>
 
                     <div>
-                      <p className="text-neutral-gray text-sm">Probability Score</p>
+                      <p className="text-neutral-gray text-sm">AI Confidence</p>
                       <p className={`text-2xl font-bold ${getStatusConfig(result.label).color}`}>
-                        {result.score}%
+                        {result.aiPercentage ?? result.score}%
                       </p>
                     </div>
 
-                    <div className="flex-1">
+                    <div>
+                      <p className="text-neutral-gray text-sm">Human Confidence</p>
+                      <p className={`text-2xl font-bold ${getStatusConfig(result.label).color}`}>
+                        {result.humanPercentage ?? Math.max(0, 100 - result.score)}%
+                      </p>
+                    </div>
+
+                    <div className="flex-1 min-w-[240px]">
                       <p className="text-neutral-gray text-sm mb-2">Score Bar</p>
                       <div className="w-full bg-primary-bg rounded-full h-3">
                         <div
@@ -241,7 +239,7 @@ export const TextAnalysis = ({ onNavigate }: TextAnalysisProps) => {
                               ? 'bg-yellow-400'
                               : 'bg-green-400'
                           }`}
-                          style={{ width: `${result.score}%` }}
+                          style={{ width: `${result.aiPercentage ?? result.score}%` }}
                         />
                       </div>
                     </div>
@@ -256,6 +254,14 @@ export const TextAnalysis = ({ onNavigate }: TextAnalysisProps) => {
                 <p className="text-neutral-gray leading-relaxed">
                   {result.explanation}
                 </p>
+                {result.analysisSource && (
+                  <p className="text-neutral-gray text-sm mt-3">
+                    <strong>Analysis Source:</strong> {result.analysisSource}
+                    {result.primaryService && result.secondaryService && (
+                      <span> — Primary: {result.primaryService}, Secondary: {result.secondaryService}</span>
+                    )}
+                  </p>
+                )}
               </div>
 
               <div className="mb-6 border-t border-primary-purple/30 pt-6">
@@ -301,7 +307,7 @@ export const TextAnalysis = ({ onNavigate }: TextAnalysisProps) => {
                   Analysis Limitations
                 </h3>
                 <ul className="text-neutral-gray text-sm space-y-2 list-disc list-inside">
-                  <li>Pattern analysis provides estimates, not definitive proof</li>
+                  <li>Pattern analysis provides a detected result; review the evidence and confidence levels.</li>
                   <li>Formal or technical writing by humans can exhibit similar characteristics</li>
                   <li>Advanced AI models may produce content that evades pattern detection</li>
                   <li>Results should be considered alongside other evaluation methods</li>

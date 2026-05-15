@@ -29,7 +29,7 @@ export const Landing = ({ onNavigate }: LandingProps) => {
             </h1>
             <p className="text-xl text-neutral-gray mb-8 leading-relaxed">
               Analyze digital content across text, images, audio, and video.
-              Unveil uses advanced pattern analysis to estimate the likelihood of AI assistance,
+              Unveil uses advanced pattern analysis to confirm AI assistance with confidence,
               helping you understand the origins of content you encounter online.
             </p>
             <Button
@@ -73,7 +73,7 @@ export const Landing = ({ onNavigate }: LandingProps) => {
             </h2>
             <p className="text-xl text-neutral-gray max-w-2xl mx-auto">
               In a world where AI-assisted content is increasingly prevalent,
-              Unveil helps you analyze patterns and estimate the likelihood of AI involvement in digital media.
+              Unveil helps you analyze patterns and confirm AI involvement in digital media.
             </p>
           </div>
 
@@ -99,7 +99,7 @@ export const Landing = ({ onNavigate }: LandingProps) => {
                 Pattern Analysis
               </h3>
               <p className="text-neutral-gray">
-                Our algorithms analyze subtle patterns and provide probability-based estimates
+                Our algorithms analyze subtle patterns and provide confirmed results
                 with detailed explanations and confidence levels.
               </p>
             </div>

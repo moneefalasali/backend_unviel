@@ -204,22 +204,6 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
   const setLanguage = async (lang: Language) => {
     setLanguageState(lang);
     localStorage.setItem('language', lang);
-
-    try {
-      const { supabase } = await import('../lib/supabase').then(m => ({ supabase: m.supabase }));
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        await supabase
-          .from('user_preferences')
-          .upsert({
-            id: user.id,
-            language: lang,
-            updated_at: new Date().toISOString()
-          });
-      }
-    } catch (error) {
-      console.error('Failed to save language preference:', error);
-    }
   };
 
   const t = (key: string): string => {
