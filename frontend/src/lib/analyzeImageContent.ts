@@ -23,8 +23,17 @@ export async function analyzeImageContent(file: File): Promise<AnalysisResult> {
 
   console.log("API RESPONSE FROM BACKEND:", data);
 
-  const confidencePercent = Math.round(data.ai_percentage);
-  const isAI = data.classification === "AI Generated";
+  const classification = data.classification ?? 'Unknown';
+  const aiPercentage = Math.round(data.ai_percentage ?? 0);
+  const humanPercentage = Math.round(data.human_percentage ?? Math.max(0, 100 - aiPercentage));
+  const rawConfidence = data.confidence;
+  const score = rawConfidence !== undefined
+    ? Math.round(rawConfidence * 100)
+    : aiPercentage;
+  const confidenceValue = rawConfidence !== undefined
+    ? rawConfidence
+    : (data.ai_percentage ?? 0) / 100;
+  const isAI = classification.toLowerCase().includes('ai');
   const analysisSource = data.analysis_source ?? data.analysisSource;
   const primaryService = data.primary_service ?? data.primaryService;
   const secondaryService = data.secondary_service ?? data.secondaryService;
@@ -32,23 +41,26 @@ export async function analyzeImageContent(file: File): Promise<AnalysisResult> {
   
   // Mapping to the Frontend structure expected by ImageAnalysis.tsx
   let label: 'Low' | 'Medium' | 'High' = 'Low';
-  if (data.confidence > 0.7) {
+  if (confidenceValue > 0.7) {
     label = 'High';
-  } else if (data.confidence > 0.3) {
+  } else if (confidenceValue > 0.3) {
     label = 'Medium';
   }
 
   return {
-    score: confidencePercent,
-    label: label,
+    score,
+    label,
+    classification,
+    aiPercentage,
+    humanPercentage,
     explanation: data.explanation || (isAI 
-      ? `This image is confirmed as AI-generated with ${confidencePercent}% confidence.` 
-      : `This image appears to be a real photo with ${100 - confidencePercent}% confidence.`),
+      ? `This image is confirmed as AI-generated with ${aiPercentage}% confidence.` 
+      : `This image appears to be a real photo with ${humanPercentage}% confidence.`),
     signals: [
       {
         name: "AI Confidence",
         impact: isAI ? "increased" : "decreased",
-        value: `${confidencePercent}%`
+        value: `${aiPercentage}%`
       },
       {
         name: "Content Authenticity",

@@ -286,6 +286,16 @@ export const VideoAnalysis = ({ onNavigate }: VideoAnalysisProps) => {
                     )}
                   </p>
                 )}
+                {result.classification && (
+                  <p className="text-neutral-gray text-sm mt-3">
+                    <strong>Classification:</strong> {result.classification}
+                  </p>
+                )}
+                {(result.aiPercentage !== undefined || result.humanPercentage !== undefined) && (
+                  <p className="text-neutral-gray text-sm mt-2">
+                    <strong>AI Percentage:</strong> {result.aiPercentage ?? 'N/A'}% — <strong>Human Percentage:</strong> {result.humanPercentage ?? 'N/A'}%
+                  </p>
+                )}
               </div>
 
               <div className="mb-6 border-t border-primary-purple/30 pt-6">

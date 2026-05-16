@@ -47,8 +47,11 @@ export async function analyzeTextContent(text: string): Promise<AnalysisResult> 
   const data = await response.json();
   
   const aiPercentage = Math.round(data.ai_percentage ?? 0);
-  const humanPercentage = Math.round(data.human_percentage ?? (100 - aiPercentage));
-  const confidencePercent = Math.round(data.confidence ?? 0);
+  const humanPercentage = Math.round(data.human_percentage ?? Math.max(0, 100 - aiPercentage));
+  const rawConfidence = data.confidence;
+  const confidencePercent = rawConfidence !== undefined
+    ? Math.round(rawConfidence * 100)
+    : aiPercentage;
   const classification = data.classification ?? (aiPercentage > 50 ? 'AI-generated' : 'Human-written');
   const isAI = classification.toLowerCase().includes('ai');
   const analysisSource = data.analysis_source ?? data.analysisSource;
@@ -57,15 +60,18 @@ export async function analyzeTextContent(text: string): Promise<AnalysisResult> 
   const serviceResults = data.service_results ?? data.serviceResults;
 
   let label: 'Low' | 'Medium' | 'High' = 'Low';
-  if ((data.confidence ?? 0) > 0.7) {
+  const confidenceValue = rawConfidence !== undefined
+    ? rawConfidence
+    : (data.ai_percentage ?? 0) / 100;
+  if (confidenceValue > 0.7) {
     label = 'High';
-  } else if ((data.confidence ?? 0) > 0.3) {
+  } else if (confidenceValue > 0.3) {
     label = 'Medium';
   }
 
   return {
     score: confidencePercent,
-    label: label,
+    label,
     classification,
     aiPercentage,
     humanPercentage,
