@@ -61,7 +61,18 @@ const request = async (path: string, options: RequestInit = {}) => {
   });
 
   const text = await response.text();
-  const data = text ? JSON.parse(text) : null;
+
+  let data: any = null;
+  if (text) {
+    try {
+      data = JSON.parse(text);
+    } catch (err) {
+      // If response is not valid JSON (e.g. HTML error page), include raw text for debugging
+      const snippet = text.length > 1000 ? text.slice(0, 1000) + '... (truncated)' : text;
+      const msg = `Invalid JSON response from ${API_BASE_URL}${path} - status ${response.status}: ${snippet}`;
+      throw new Error(msg);
+    }
+  }
 
   if (!response.ok) {
     const message = data?.message || data?.error || response.statusText || 'Request failed';
