@@ -155,7 +155,7 @@ return [
     |
     */
 
-    'domain' => env('SESSION_DOMAIN'),
+    'domain' => env('SESSION_DOMAIN', parse_url(env('APP_URL'), PHP_URL_HOST)),
 
     /*
     |--------------------------------------------------------------------------
@@ -163,11 +163,11 @@ return [
     |--------------------------------------------------------------------------
     |
     | Session cookies should only be sent over secure HTTPS connections in
-    | production. For local development, this can remain false.
+    | production. Local development can remain false while production uses true.
     |
     */
 
-    'secure' => env('SESSION_SECURE_COOKIE', false),
+    'secure' => env('SESSION_SECURE_COOKIE', env('APP_ENV') === 'production'),
 
     /*
     |--------------------------------------------------------------------------
@@ -194,7 +194,7 @@ return [
     |
     */
 
-    'same_site' => env('SESSION_SAME_SITE', 'none'),
+    'same_site' => env('SESSION_SAME_SITE', env('APP_ENV') === 'production' ? 'none' : 'lax'),
 
     /*
     |--------------------------------------------------------------------------
