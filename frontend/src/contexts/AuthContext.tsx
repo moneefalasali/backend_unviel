@@ -100,6 +100,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const data = await registerUser(email, password, fullName, gender, age);
       setUser(data.user ?? null);
       setProfile(data.profile ?? null);
+      await refreshAuth();
       return { error: null };
     } catch (error) {
       return { error: error as Error };
@@ -111,6 +112,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const data = await loginUser(email, password);
       setUser(data.user ?? null);
       setProfile(data.profile ?? null);
+      await refreshAuth();
       return { error: null };
     } catch (error) {
       return { error: error as Error };

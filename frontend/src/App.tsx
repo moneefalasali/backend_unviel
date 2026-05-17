@@ -35,18 +35,20 @@ type Page =
   | 'social';
 
 function AppContent() {
-  const { user, loading } = useAuth();
+  const { user, loading, initialized } = useAuth();
   const [currentPage, setCurrentPage] = useState<Page>('landing');
 
   useEffect(() => {
-    if (!loading) {
-      if (user && currentPage === 'landing') {
-        setCurrentPage('dashboard');
-      } else if (!user && !['landing', 'signup', 'login'].includes(currentPage)) {
-        setCurrentPage('landing');
-      }
+    if (loading || !initialized) {
+      return;
     }
-  }, [user, loading, currentPage]);
+
+    if (user && currentPage === 'landing') {
+      setCurrentPage('dashboard');
+    } else if (!user && !['landing', 'signup', 'login'].includes(currentPage)) {
+      setCurrentPage('landing');
+    }
+  }, [user, loading, initialized, currentPage]);
 
   const navigate = (page: string) => {
     setCurrentPage(page as Page);
