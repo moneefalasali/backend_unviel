@@ -78,6 +78,19 @@ const parseJson = (text: string): unknown => {
   }
 };
 
+const getCsrfCookie = async (): Promise<void> => {
+  const url = `${API_BASE_URL}/sanctum/csrf-cookie`;
+  await fetch(url, {
+    method: 'GET',
+    credentials: 'include',
+    mode: 'cors',
+    headers: {
+      Accept: 'application/json',
+      'X-Requested-With': 'XMLHttpRequest',
+    },
+  });
+};
+
 const getErrorMessage = (payload: any, defaultMessage: string): string => {
   if (!payload) return defaultMessage;
   if (typeof payload === 'string') return payload;
@@ -117,6 +130,7 @@ const request = async <T>(
     const timer = window.setTimeout(() => controller.abort(), timeout);
     const headers: HeadersInit = {
       Accept: 'application/json',
+      'X-Requested-With': 'XMLHttpRequest',
       ...((options.headers as HeadersInit) || {}),
     };
 
@@ -133,7 +147,13 @@ const request = async <T>(
 
     try {
       log('Request', url, { ...options, headers, timeout });
-      const response = await fetch(url, { ...options, headers, signal: controller.signal });
+      const response = await fetch(url, {
+        ...options,
+        headers,
+        signal: controller.signal,
+        credentials: 'include',
+        mode: 'cors',
+      });
       const rawBody = await response.text();
       const payload = parseJson(rawBody);
 
@@ -197,6 +217,8 @@ const request = async <T>(
 };
 
 export const registerUser = async (email: string, password: string, fullName: string, gender: string, age: number) => {
+  await getCsrfCookie();
+
   const response = await request<{ user: ApiUser; profile: UserProfile; token: string }>('/register', {
     method: 'POST',
     body: JSON.stringify({ email, password, full_name: fullName, gender, age }),
@@ -210,6 +232,8 @@ export const registerUser = async (email: string, password: string, fullName: st
 };
 
 export const loginUser = async (email: string, password: string) => {
+  await getCsrfCookie();
+
   const response = await request<{ user: ApiUser; profile: UserProfile; token: string }>('/login', {
     method: 'POST',
     body: JSON.stringify({ email, password }),

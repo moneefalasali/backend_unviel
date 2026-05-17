@@ -162,13 +162,12 @@ return [
     | HTTPS Only Cookies
     |--------------------------------------------------------------------------
     |
-    | By setting this option to true, session cookies will only be sent back
-    | to the server if the browser has a HTTPS connection. This will keep
-    | the cookie from being sent to you when it can't be done securely.
+    | Session cookies should only be sent over secure HTTPS connections in
+    | production. For local development, this can remain false.
     |
     */
 
-    'secure' => env('SESSION_SECURE_COOKIE'),
+    'secure' => env('SESSION_SECURE_COOKIE', false),
 
     /*
     |--------------------------------------------------------------------------
@@ -188,15 +187,14 @@ return [
     | Same-Site Cookies
     |--------------------------------------------------------------------------
     |
-    | This option determines how your cookies behave when cross-site requests
-    | take place, and can be used to mitigate CSRF attacks. By default, we
-    | will set this value to "lax" since this is a secure default value.
+    | For cross-domain SPA authentication between Vercel and Laravel Cloud,
+    | this must be set to none with secure cookies enabled.
     |
     | Supported: "lax", "strict", "none", null
     |
     */
 
-    'same_site' => 'lax',
+    'same_site' => env('SESSION_SAME_SITE', 'none'),
 
     /*
     |--------------------------------------------------------------------------

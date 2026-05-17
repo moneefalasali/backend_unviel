@@ -8,14 +8,17 @@ use App\Http\Controllers\SocialAuthController;
 
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
-Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
-Route::get('/user', [AuthController::class, 'user'])->middleware('auth:sanctum');
-Route::get('/profile', [AuthController::class, 'profile'])->middleware('auth:sanctum');
-Route::put('/profile', [AuthController::class, 'updateProfile'])->middleware('auth:sanctum');
-Route::get('/history', [AuthController::class, 'history'])->middleware('auth:sanctum');
-Route::post('/history', [AuthController::class, 'saveHistory'])->middleware('auth:sanctum');
-Route::post('/subscription/activate', [AuthController::class, 'activateSubscription'])->middleware('auth:sanctum');
-Route::post('/subscription/cancel', [AuthController::class, 'cancelSubscription'])->middleware('auth:sanctum');
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/logout', [AuthController::class, 'logout']);
+    Route::get('/user', [AuthController::class, 'user']);
+    Route::get('/profile', [AuthController::class, 'profile']);
+    Route::put('/profile', [AuthController::class, 'updateProfile']);
+    Route::get('/history', [AuthController::class, 'history']);
+    Route::post('/history', [AuthController::class, 'saveHistory']);
+    Route::post('/subscription/activate', [AuthController::class, 'activateSubscription']);
+    Route::post('/subscription/cancel', [AuthController::class, 'cancelSubscription']);
+});
 
 Route::post('/analyze-image', [AnalysisController::class, 'analyzeImage']);
 Route::post('/analyze-text', [AnalysisController::class, 'analyzeText']);
