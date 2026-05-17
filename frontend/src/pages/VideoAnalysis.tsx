@@ -91,47 +91,44 @@ export const VideoAnalysis = ({ onNavigate }: VideoAnalysisProps) => {
   const getStatusConfig = () => {
     if (!result) return {
       icon: AlertCircle,
-      color: 'text-yellow-400',
-      bgColor: 'bg-yellow-500/10',
-      borderColor: 'border-yellow-500',
+      color: 'text-neutral-gray',
+      bgColor: 'bg-neutral-gray/10',
+      borderColor: 'border-neutral-gray',
       label: 'Unknown',
     };
 
-    switch (result.label) {
-      case 'High':
-        return {
-          icon: AlertCircle,
-          color: 'text-red-400',
-          bgColor: 'bg-red-500/10',
-          borderColor: 'border-red-500',
-          label: 'High AI Confidence',
-        };
-      case 'Medium':
-        return {
-          icon: AlertTriangle,
-          color: 'text-yellow-400',
-          bgColor: 'bg-yellow-500/10',
-          borderColor: 'border-yellow-500',
-          label: 'Medium AI Confidence',
-        };
-      case 'Low':
-        return {
-          icon: CheckCircle,
-          color: 'text-green-400',
-          bgColor: 'bg-green-500/10',
-          borderColor: 'border-green-500',
-          label: 'Low AI Confidence',
-        };
-      default:
-        return {
-          icon: AlertCircle,
-          color: 'text-yellow-400',
-          bgColor: 'bg-yellow-500/10',
-          borderColor: 'border-yellow-500',
-          label: 'Unknown',
-        };
+    const aiPercentage = result.aiPercentage ?? result.score ?? 0;
+
+    if (aiPercentage >= 70) {
+      return {
+        icon: AlertCircle,
+        color: 'text-red-400',
+        bgColor: 'bg-red-500/10',
+        borderColor: 'border-red-500',
+        label: 'High AI Likelihood',
+      };
     }
+
+    if (aiPercentage >= 40) {
+      return {
+        icon: AlertTriangle,
+        color: 'text-yellow-400',
+        bgColor: 'bg-yellow-500/10',
+        borderColor: 'border-yellow-500',
+        label: 'Medium AI Likelihood',
+      };
+    }
+
+    return {
+      icon: CheckCircle,
+      color: 'text-green-400',
+      bgColor: 'bg-green-500/10',
+      borderColor: 'border-green-500',
+      label: 'Low AI Likelihood',
+    };
   };
+
+  const effectiveAiPercentage = result?.aiPercentage ?? result?.score ?? 0;
 
   return (
     <div className="min-h-screen bg-primary-bg">
@@ -292,9 +289,18 @@ export const VideoAnalysis = ({ onNavigate }: VideoAnalysisProps) => {
                   </p>
                 )}
                 {(result.aiPercentage !== undefined || result.humanPercentage !== undefined) && (
-                  <p className="text-neutral-gray text-sm mt-2">
-                    <strong>AI Percentage:</strong> {result.aiPercentage ?? 'N/A'}% — <strong>Human Percentage:</strong> {result.humanPercentage ?? 'N/A'}%
-                  </p>
+                  <div className="flex flex-wrap gap-4 mt-2 text-sm">
+                    {result.aiPercentage !== undefined && (
+                      <p className={`font-semibold ${result.aiPercentage >= 70 ? 'text-red-400' : result.aiPercentage >= 40 ? 'text-yellow-400' : 'text-green-400'}`}>
+                        AI Percentage: {result.aiPercentage}%
+                      </p>
+                    )}
+                    {result.humanPercentage !== undefined && (
+                      <p className="text-neutral-gray">
+                        Human Percentage: {result.humanPercentage}%
+                      </p>
+                    )}
+                  </div>
                 )}
               </div>
 

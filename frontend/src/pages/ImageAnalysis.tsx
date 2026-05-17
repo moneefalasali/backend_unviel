@@ -104,42 +104,37 @@ export const ImageAnalysis = ({ onNavigate }: ImageAnalysisProps) => {
     }
   };
 
-  const getStatusConfig = (label: string) => {
-    switch (label) {
-      case 'High':
-        return {
-          icon: AlertCircle,
-          color: 'text-red-400',
-          bgColor: 'bg-red-500/10',
-          borderColor: 'border-red-500',
-          label: 'High Confirmed Synthetic Pattern',
-        };
-      case 'Medium':
-        return {
-          icon: AlertTriangle,
-          color: 'text-yellow-400',
-          bgColor: 'bg-yellow-500/10',
-          borderColor: 'border-yellow-500',
-          label: 'Medium Confirmed Synthetic Pattern',
-        };
-      case 'Low':
-        return {
-          icon: CheckCircle,
-          color: 'text-green-400',
-          bgColor: 'bg-green-500/10',
-          borderColor: 'border-green-500',
-          label: 'Low Confirmed Synthetic Pattern',
-        };
-      default:
-        return {
-          icon: AlertCircle,
-          color: 'text-neutral-gray',
-          bgColor: 'bg-neutral-gray/10',
-          borderColor: 'border-neutral-gray',
-          label: 'Unknown',
-        };
+  const getStatusConfig = (aiPercentage: number) => {
+    if (aiPercentage >= 70) {
+      return {
+        icon: AlertCircle,
+        color: 'text-red-400',
+        bgColor: 'bg-red-500/10',
+        borderColor: 'border-red-500',
+        label: 'High AI Likelihood',
+      };
     }
+
+    if (aiPercentage >= 40) {
+      return {
+        icon: AlertTriangle,
+        color: 'text-yellow-400',
+        bgColor: 'bg-yellow-500/10',
+        borderColor: 'border-yellow-500',
+        label: 'Medium AI Likelihood',
+      };
+    }
+
+    return {
+      icon: CheckCircle,
+      color: 'text-green-400',
+      bgColor: 'bg-green-500/10',
+      borderColor: 'border-green-500',
+      label: 'Low AI Likelihood',
+    };
   };
+
+  const effectiveAiPercentage = result?.aiPercentage ?? result?.score ?? 0;
 
   const getSignalIcon = (impact: string) => {
     switch (impact) {
@@ -302,15 +297,15 @@ export const ImageAnalysis = ({ onNavigate }: ImageAnalysisProps) => {
 
             <Card
               className={`p-8 border-2 ${
-                getStatusConfig(result.label).borderColor
-              } ${getStatusConfig(result.label).bgColor}`}
+                getStatusConfig(effectiveAiPercentage).borderColor
+              } ${getStatusConfig(effectiveAiPercentage).bgColor}`}
             >
               <div className="flex items-start gap-4 mb-6">
                 {(() => {
-                  const StatusIcon = getStatusConfig(result.label).icon;
+                  const StatusIcon = getStatusConfig(effectiveAiPercentage).icon;
                   return (
                     <StatusIcon
-                      className={getStatusConfig(result.label).color}
+                      className={getStatusConfig(effectiveAiPercentage).color}
                       size={32}
                     />
                   );
@@ -318,7 +313,7 @@ export const ImageAnalysis = ({ onNavigate }: ImageAnalysisProps) => {
 
                 <div className="flex-1">
                   <h2 className="text-2xl font-bold text-neutral-white mb-2">
-                    Confirmed AI Generation: {getStatusConfig(result.label).label}
+                    Confirmed AI Generation: {getStatusConfig(effectiveAiPercentage).label}
                   </h2>
 
                   <div className="flex items-center gap-4 mb-4">
@@ -326,7 +321,7 @@ export const ImageAnalysis = ({ onNavigate }: ImageAnalysisProps) => {
                       <p className="text-neutral-gray text-sm">Confidence Level</p>
                       <p
                         className={`text-3xl font-bold ${
-                          getStatusConfig(result.label).color
+                          getStatusConfig(effectiveAiPercentage).color
                         }`}
                       >
                         {result.label}
@@ -337,7 +332,7 @@ export const ImageAnalysis = ({ onNavigate }: ImageAnalysisProps) => {
                       <p className="text-neutral-gray text-sm">Confidence Score</p>
                       <p
                         className={`text-2xl font-bold ${
-                          getStatusConfig(result.label).color
+                          getStatusConfig(effectiveAiPercentage).color
                         }`}
                       >
                         {result.score}%
@@ -349,13 +344,13 @@ export const ImageAnalysis = ({ onNavigate }: ImageAnalysisProps) => {
                       <div className="w-full bg-primary-bg rounded-full h-3">
                         <div
                           className={`h-3 rounded-full ${
-                            result.label === 'High'
+                            effectiveAiPercentage >= 70
                               ? 'bg-red-400'
-                              : result.label === 'Medium'
+                              : effectiveAiPercentage >= 40
                               ? 'bg-yellow-400'
                               : 'bg-green-400'
                           }`}
-                          style={{ width: `${result.score}%` }}
+                          style={{ width: `${effectiveAiPercentage}%` }}
                         />
                       </div>
                     </div>
@@ -386,9 +381,18 @@ export const ImageAnalysis = ({ onNavigate }: ImageAnalysisProps) => {
                   </p>
                 )}
                 {(result.aiPercentage !== undefined || result.humanPercentage !== undefined) && (
-                  <p className="text-neutral-gray text-sm mt-2">
-                    <strong>AI Percentage:</strong> {result.aiPercentage ?? 'N/A'}% — <strong>Human Percentage:</strong> {result.humanPercentage ?? 'N/A'}%
-                  </p>
+                  <div className="flex flex-wrap gap-4 mt-2 text-sm">
+                    {result.aiPercentage !== undefined && (
+                      <p className={`font-semibold ${result.aiPercentage >= 70 ? 'text-red-400' : result.aiPercentage >= 40 ? 'text-yellow-400' : 'text-green-400'}`}>
+                        AI Percentage: {result.aiPercentage}%
+                      </p>
+                    )}
+                    {result.humanPercentage !== undefined && (
+                      <p className="text-neutral-gray">
+                        Human Percentage: {result.humanPercentage}%
+                      </p>
+                    )}
+                  </div>
                 )}
               </div>
 

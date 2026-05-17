@@ -61,41 +61,34 @@ export const TextAnalysis = ({ onNavigate }: TextAnalysisProps) => {
     }
   };
 
-  const getStatusConfig = (label: string) => {
-    switch (label) {
-      case 'High':
-        return {
-          icon: AlertCircle,
-          color: 'text-red-400',
-          bgColor: 'bg-red-500/10',
-          borderColor: 'border-red-500',
-          label: 'High Confirmed AI Involvement',
-        };
-      case 'Medium':
-        return {
-          icon: AlertTriangle,
-          color: 'text-yellow-400',
-          bgColor: 'bg-yellow-500/10',
-          borderColor: 'border-yellow-500',
-          label: 'Medium Confirmed AI Involvement',
-        };
-      case 'Low':
-        return {
-          icon: CheckCircle,
-          color: 'text-green-400',
-          bgColor: 'bg-green-500/10',
-          borderColor: 'border-green-500',
-          label: 'Low Confirmed AI Involvement',
-        };
-      default:
-        return {
-          icon: AlertCircle,
-          color: 'text-neutral-gray',
-          bgColor: 'bg-neutral-gray/10',
-          borderColor: 'border-neutral-gray',
-          label: 'Unknown',
-        };
+  const getStatusConfig = (aiPercentage: number) => {
+    if (aiPercentage >= 70) {
+      return {
+        icon: AlertCircle,
+        color: 'text-red-400',
+        bgColor: 'bg-red-500/10',
+        borderColor: 'border-red-500',
+        label: 'High Confirmed AI Involvement',
+      };
     }
+
+    if (aiPercentage >= 40) {
+      return {
+        icon: AlertTriangle,
+        color: 'text-yellow-400',
+        bgColor: 'bg-yellow-500/10',
+        borderColor: 'border-yellow-500',
+        label: 'Medium Confirmed AI Involvement',
+      };
+    }
+
+    return {
+      icon: CheckCircle,
+      color: 'text-green-400',
+      bgColor: 'bg-green-500/10',
+      borderColor: 'border-green-500',
+      label: 'Low Confirmed AI Involvement',
+    };
   };
 
   const getSignalIcon = (impact: string) => {
@@ -188,42 +181,42 @@ export const TextAnalysis = ({ onNavigate }: TextAnalysisProps) => {
 
         {result && (
           <>
-            <Card className={`p-6 mb-6 border-2 ${getStatusConfig(result.label).borderColor} ${getStatusConfig(result.label).bgColor}`}>
+            <Card className={`p-6 mb-6 border-2 ${getStatusConfig(result.aiPercentage ?? result.score).borderColor} ${getStatusConfig(result.aiPercentage ?? result.score).bgColor}`}>
               <p className="text-neutral-gray text-sm leading-relaxed">
                 <strong>Analysis Notice:</strong> This result is a confirmed classification based on detected patterns. The {result.score}% score reflects analysis confidence.
               </p>
             </Card>
 
-            <Card className={`p-8 border-2 ${getStatusConfig(result.label).borderColor} ${getStatusConfig(result.label).bgColor}`}>
+            <Card className={`p-8 border-2 ${getStatusConfig(result.aiPercentage ?? result.score).borderColor} ${getStatusConfig(result.aiPercentage ?? result.score).bgColor}`}>
               <div className="flex items-start gap-4 mb-6">
                 {(() => {
-                  const StatusIcon = getStatusConfig(result.label).icon;
-                  return <StatusIcon className={getStatusConfig(result.label).color} size={32} />;
+                  const StatusIcon = getStatusConfig(result.aiPercentage ?? result.score).icon;
+                  return <StatusIcon className={getStatusConfig(result.aiPercentage ?? result.score).color} size={32} />;
                 })()}
 
                 <div className="flex-1">
                   <h2 className="text-2xl font-bold text-neutral-white mb-2">
-                    Confirmed AI Assistance: {getStatusConfig(result.label).label}
+                    Confirmed AI Assistance: {getStatusConfig(result.aiPercentage ?? result.score).label}
                   </h2>
 
                   <div className="flex items-center gap-4 mb-4 flex-wrap">
                     <div>
                       <p className="text-neutral-gray text-sm">Prediction</p>
-                      <p className={`text-3xl font-bold ${getStatusConfig(result.label).color}`}>
+                      <p className={`text-3xl font-bold ${getStatusConfig(result.aiPercentage ?? result.score).color}`}>
                         {result.classification ?? (result.score > 50 ? 'AI-generated' : 'Human-written')}
                       </p>
                     </div>
 
                     <div>
                       <p className="text-neutral-gray text-sm">AI Confidence</p>
-                      <p className={`text-2xl font-bold ${getStatusConfig(result.label).color}`}>
+                      <p className={`text-2xl font-bold ${getStatusConfig(result.aiPercentage ?? result.score).color}`}>
                         {result.aiPercentage ?? result.score}%
                       </p>
                     </div>
 
                     <div>
                       <p className="text-neutral-gray text-sm">Human Confidence</p>
-                      <p className={`text-2xl font-bold ${getStatusConfig(result.label).color}`}>
+                      <p className={`text-2xl font-bold ${getStatusConfig(result.aiPercentage ?? result.score).color}`}>
                         {result.humanPercentage ?? Math.max(0, 100 - result.score)}%
                       </p>
                     </div>
