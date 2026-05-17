@@ -4,15 +4,11 @@ import {
   Image as ImageIcon,
   Upload,
   Loader2,
-  AlertCircle,
-  CheckCircle,
-  AlertTriangle,
   X,
-  TrendingUp,
-  TrendingDown,
-  Minus,
+  AlertTriangle,
 } from 'lucide-react';
 import { Logo } from '../components/Logo';
+import { getAnalysisStatusConfig, getAnalysisPercentageTextColor, getSignalIcon, getSignalClassName } from '../lib/analysisUi';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { useAuth } from '../contexts/AuthContext';
@@ -104,48 +100,9 @@ export const ImageAnalysis = ({ onNavigate }: ImageAnalysisProps) => {
     }
   };
 
-  const getStatusConfig = (aiPercentage: number) => {
-    if (aiPercentage >= 70) {
-      return {
-        icon: AlertCircle,
-        color: 'text-red-400',
-        bgColor: 'bg-red-500/10',
-        borderColor: 'border-red-500',
-        label: 'High AI Likelihood',
-      };
-    }
-
-    if (aiPercentage >= 40) {
-      return {
-        icon: AlertTriangle,
-        color: 'text-yellow-400',
-        bgColor: 'bg-yellow-500/10',
-        borderColor: 'border-yellow-500',
-        label: 'Medium AI Likelihood',
-      };
-    }
-
-    return {
-      icon: CheckCircle,
-      color: 'text-green-400',
-      bgColor: 'bg-green-500/10',
-      borderColor: 'border-green-500',
-      label: 'Low AI Likelihood',
-    };
-  };
-
   const effectiveAiPercentage = result?.aiPercentage ?? result?.score ?? 0;
 
-  const getSignalIcon = (impact: string) => {
-    switch (impact) {
-      case 'increased':
-        return TrendingUp;
-      case 'decreased':
-        return TrendingDown;
-      default:
-        return Minus;
-    }
-  };
+  const getStatusConfig = () => getAnalysisStatusConfig(effectiveAiPercentage);
 
   return (
     <div className="min-h-screen bg-primary-bg">
@@ -382,11 +339,9 @@ export const ImageAnalysis = ({ onNavigate }: ImageAnalysisProps) => {
                 )}
                 {(result.aiPercentage !== undefined || result.humanPercentage !== undefined) && (
                   <div className="flex flex-wrap gap-4 mt-2 text-sm">
-                    {result.aiPercentage !== undefined && (
-                      <p className={`font-semibold ${result.aiPercentage >= 70 ? 'text-red-400' : result.aiPercentage >= 40 ? 'text-yellow-400' : 'text-green-400'}`}>
-                        AI Percentage: {result.aiPercentage}%
-                      </p>
-                    )}
+                    <p className={`font-semibold ${getAnalysisPercentageTextColor(result.aiPercentage ?? result.score ?? 0)}`}>
+                      AI Percentage: {result.aiPercentage ?? result.score ?? 0}%
+                    </p>
                     {result.humanPercentage !== undefined && (
                       <p className="text-neutral-gray">
                         Human Percentage: {result.humanPercentage}%
@@ -403,20 +358,15 @@ export const ImageAnalysis = ({ onNavigate }: ImageAnalysisProps) => {
 
                 <div className="space-y-3">
                   {result.signals.map((signal, index) => {
-                    const SignalIcon = getSignalIcon(signal.impact);
+                    const SignalIcon = getSignalIcon(signal.impact as any);
+                    const signalColor = getSignalClassName(signal.impact as any);
 
                     return (
                       <div key={index} className="bg-primary-bg rounded-lg p-4">
                         <div className="flex items-start gap-3">
                           <SignalIcon
                             size={20}
-                            className={`flex-shrink-0 mt-0.5 ${
-                              signal.impact === 'increased'
-                                ? 'text-red-400'
-                                : signal.impact === 'decreased'
-                                ? 'text-green-400'
-                                : 'text-neutral-gray'
-                            }`}
+                            className={`flex-shrink-0 mt-0.5 ${signalColor}`}
                           />
 
                           <div className="flex-1">
@@ -424,7 +374,7 @@ export const ImageAnalysis = ({ onNavigate }: ImageAnalysisProps) => {
                               {signal.name}
                             </h4>
 
-                            <p className="text-neutral-gray text-sm">
+                            <p className={`text-sm ${signalColor}`}>
                               {signal.value}
                             </p>
                           </div>

@@ -3,14 +3,10 @@ import {
   ArrowLeft,
   FileText,
   Loader2,
-  AlertCircle,
-  CheckCircle,
   AlertTriangle,
-  TrendingUp,
-  TrendingDown,
-  Minus,
 } from 'lucide-react';
 import { Logo } from '../components/Logo';
+import { getAnalysisStatusConfig, getAnalysisPercentageTextColor, getSignalIcon, getSignalClassName } from '../lib/analysisUi';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { useAuth } from '../contexts/AuthContext';
@@ -61,46 +57,8 @@ export const TextAnalysis = ({ onNavigate }: TextAnalysisProps) => {
     }
   };
 
-  const getStatusConfig = (aiPercentage: number) => {
-    if (aiPercentage >= 70) {
-      return {
-        icon: AlertCircle,
-        color: 'text-red-400',
-        bgColor: 'bg-red-500/10',
-        borderColor: 'border-red-500',
-        label: 'High Confirmed AI Involvement',
-      };
-    }
-
-    if (aiPercentage >= 40) {
-      return {
-        icon: AlertTriangle,
-        color: 'text-yellow-400',
-        bgColor: 'bg-yellow-500/10',
-        borderColor: 'border-yellow-500',
-        label: 'Medium Confirmed AI Involvement',
-      };
-    }
-
-    return {
-      icon: CheckCircle,
-      color: 'text-green-400',
-      bgColor: 'bg-green-500/10',
-      borderColor: 'border-green-500',
-      label: 'Low Confirmed AI Involvement',
-    };
-  };
-
-  const getSignalIcon = (impact: string) => {
-    switch (impact) {
-      case 'increased':
-        return TrendingUp;
-      case 'decreased':
-        return TrendingDown;
-      default:
-        return Minus;
-    }
-  };
+  const getStatusConfig = (aiPercentage: number) => getAnalysisStatusConfig(aiPercentage);
+  // use imported `getSignalIcon` from ../lib/analysisUi directly
 
   return (
     <div className="min-h-screen bg-primary-bg">
