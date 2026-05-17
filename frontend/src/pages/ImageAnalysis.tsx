@@ -254,15 +254,15 @@ export const ImageAnalysis = ({ onNavigate }: ImageAnalysisProps) => {
 
             <Card
               className={`p-8 border-2 ${
-                getStatusConfig(effectiveAiPercentage).borderColor
-              } ${getStatusConfig(effectiveAiPercentage).bgColor}`}
+                getStatusConfig().borderColor
+              } ${getStatusConfig().bgColor}`}
             >
               <div className="flex items-start gap-4 mb-6">
                 {(() => {
-                  const StatusIcon = getStatusConfig(effectiveAiPercentage).icon;
+                  const StatusIcon = getStatusConfig().icon;
                   return (
                     <StatusIcon
-                      className={getStatusConfig(effectiveAiPercentage).color}
+                      className={getStatusConfig().color}
                       size={32}
                     />
                   );
@@ -270,7 +270,7 @@ export const ImageAnalysis = ({ onNavigate }: ImageAnalysisProps) => {
 
                 <div className="flex-1">
                   <h2 className="text-2xl font-bold text-neutral-white mb-2">
-                    Confirmed AI Generation: {getStatusConfig(effectiveAiPercentage).label}
+                    Confirmed AI Generation: {getStatusConfig().label}
                   </h2>
 
                   <div className="flex items-center gap-4 mb-4">
@@ -278,8 +278,8 @@ export const ImageAnalysis = ({ onNavigate }: ImageAnalysisProps) => {
                       <p className="text-neutral-gray text-sm">Confidence Level</p>
                       <p
                         className={`text-3xl font-bold ${
-                          getStatusConfig(effectiveAiPercentage).color
-                        }`}
+                            getStatusConfig().color
+                          }`}
                       >
                         {result.label}
                       </p>
@@ -289,8 +289,8 @@ export const ImageAnalysis = ({ onNavigate }: ImageAnalysisProps) => {
                       <p className="text-neutral-gray text-sm">Confidence Score</p>
                       <p
                         className={`text-2xl font-bold ${
-                          getStatusConfig(effectiveAiPercentage).color
-                        }`}
+                            getStatusConfig().color
+                          }`}
                       >
                         {result.score}%
                       </p>
