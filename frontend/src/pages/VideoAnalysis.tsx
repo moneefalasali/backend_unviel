@@ -1,12 +1,14 @@
 import { useState, useRef } from 'react';
-import { ArrowLeft, Video as VideoIcon, Upload, Loader2, AlertCircle, AlertTriangle, CheckCircle, X, Minus } from 'lucide-react';
+import { ArrowLeft, Video as VideoIcon, Upload, Loader2, X, TrendingUp, TrendingDown } from 'lucide-react';
 import { Logo } from '../components/Logo';
 import { AnalysisResult } from '../lib/types';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { useAuth } from '../contexts/AuthContext';
+import { useToast } from '../contexts/ToastContext';
 import { analyzeVideoContent } from '../lib/analyzeVideoContent';
 import { saveAnalysisHistory } from '../lib/api';
+import { getSignalIcon } from '../lib/analysisUi';
 
 interface VideoAnalysisProps {
   onNavigate: (page: string) => void;
@@ -14,6 +16,7 @@ interface VideoAnalysisProps {
 
 export const VideoAnalysis = ({ onNavigate }: VideoAnalysisProps) => {
   const { user } = useAuth();
+  const { addToast } = useToast();
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
@@ -22,7 +25,11 @@ export const VideoAnalysis = ({ onNavigate }: VideoAnalysisProps) => {
 
   const handleFileSelect = (selectedFile: File) => {
     if (!selectedFile.type.startsWith('video/')) {
-      alert('Please select a video file');
+      addToast({
+        type: 'error',
+        title: 'Invalid file type',
+        description: 'Please select a valid video file.',
+      });
       return;
     }
 
@@ -73,7 +80,11 @@ export const VideoAnalysis = ({ onNavigate }: VideoAnalysisProps) => {
       }
     } catch (error) {
       console.error('Video analysis failed:', error);
-      alert('Video analysis failed. Please try again.');
+      addToast({
+        type: 'error',
+        title: 'Video analysis failed',
+        description: 'Please try again or choose a smaller, supported video.',
+      });
     } finally {
       setAnalyzing(false);
     }
@@ -88,47 +99,20 @@ export const VideoAnalysis = ({ onNavigate }: VideoAnalysisProps) => {
     }
   };
 
-  const getStatusConfig = () => {
-    if (!result) return {
-      icon: AlertCircle,
-      color: 'text-neutral-gray',
-      bgColor: 'bg-neutral-gray/10',
-      borderColor: 'border-neutral-gray',
-      label: 'Unknown',
-    };
+  const getColorByPercentage = (aiPercentage: number) => {
+    if (aiPercentage >= 70) return { bg: 'bg-red-500/20', border: 'border-red-500', text: 'text-red-400' };
+    if (aiPercentage >= 40) return { bg: 'bg-yellow-500/20', border: 'border-yellow-500', text: 'text-yellow-400' };
+    return { bg: 'bg-green-500/20', border: 'border-green-500', text: 'text-green-400' };
+  };
 
-    const aiPercentage = result.aiPercentage ?? result.score ?? 0;
-
-    if (aiPercentage >= 70) {
-      return {
-        icon: AlertCircle,
-        color: 'text-red-400',
-        bgColor: 'bg-red-500/10',
-        borderColor: 'border-red-500',
-        label: 'High AI Likelihood',
-      };
-    }
-
-    if (aiPercentage >= 40) {
-      return {
-        icon: AlertTriangle,
-        color: 'text-yellow-400',
-        bgColor: 'bg-yellow-500/10',
-        borderColor: 'border-yellow-500',
-        label: 'Medium AI Likelihood',
-      };
-    }
-
-    return {
-      icon: CheckCircle,
-      color: 'text-green-400',
-      bgColor: 'bg-green-500/10',
-      borderColor: 'border-green-500',
-      label: 'Low AI Likelihood',
-    };
+  const getStatusLabel = (aiPercentage: number) => {
+    if (aiPercentage >= 70) return 'High AI Probability';
+    if (aiPercentage >= 40) return 'Medium AI Probability';
+    return 'Low AI Probability';
   };
 
   const effectiveAiPercentage = result?.aiPercentage ?? result?.score ?? 0;
+  const colors = getColorByPercentage(effectiveAiPercentage);
 
   return (
     <div className="min-h-screen bg-primary-bg">
@@ -255,16 +239,65 @@ export const VideoAnalysis = ({ onNavigate }: VideoAnalysisProps) => {
         </Card>
 
         {result && (
-          <Card className={`p-8 border-2 ${getStatusConfig().borderColor} ${getStatusConfig().bgColor}`}>
+          <>
+            <Card className={`p-6 mb-6 border-2 ${colors.border} ${colors.bg}`}>
+              <p className="text-neutral-gray text-sm leading-relaxed">
+                <strong>Analysis Result:</strong> AI Percentage: <strong className={colors.text}>{result.aiPercentage ?? result.score}%</strong> | Human Percentage: <strong className={colors.text}>{result.humanPercentage ?? Math.max(0, 100 - result.score)}%</strong>
+              </p>
+            </Card>
+
+            <Card className={`p-8 border-2 ${colors.border} ${colors.bg}`}>
               <div className="flex items-start gap-4 mb-6">
-                {(() => {
-                  const StatusIcon = getStatusConfig().icon;
-                  return <StatusIcon className={getStatusConfig().color} size={32} />;
-                })()}
+                {effectiveAiPercentage >= 70 ? (
+                  <TrendingUp className={colors.text} size={32} />
+                ) : effectiveAiPercentage >= 40 ? (
+                  <TrendingUp className={colors.text} size={32} />
+                ) : (
+                  <TrendingDown className={colors.text} size={32} />
+                )}
                 <div className="flex-1">
                   <h2 className="text-2xl font-bold text-neutral-white mb-2">
-                    {getStatusConfig().label}
+                    {getStatusLabel(effectiveAiPercentage)}
                   </h2>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4 mb-6">
+                <div className="bg-primary-bg rounded-lg p-4">
+                  <p className="text-neutral-gray text-sm mb-1">Classification</p>
+                  <p className={`text-xl font-bold ${colors.text}`}>
+                    {result.classification ?? (result.score > 50 ? 'AI-generated' : 'Real Footage')}
+                  </p>
+                </div>
+
+                <div className="bg-primary-bg rounded-lg p-4">
+                  <p className="text-neutral-gray text-sm mb-1">AI Percentage</p>
+                  <p className={`text-3xl font-bold ${colors.text}`}>
+                    {result.aiPercentage ?? result.score}%
+                  </p>
+                </div>
+
+                <div className="bg-primary-bg rounded-lg p-4">
+                  <p className="text-neutral-gray text-sm mb-1">Human Percentage</p>
+                  <p className={`text-3xl font-bold ${colors.text}`}>
+                    {result.humanPercentage ?? Math.max(0, 100 - result.score)}%
+                  </p>
+                </div>
+              </div>
+
+              <div className="mb-6">
+                <p className="text-neutral-gray text-sm mb-2">Confidence Score</p>
+                <div className="w-full bg-primary-bg rounded-full h-4 overflow-hidden">
+                  <div
+                    className={`h-4 rounded-full transition-all duration-500 ${
+                      effectiveAiPercentage >= 70
+                        ? 'bg-red-500'
+                        : effectiveAiPercentage >= 40
+                        ? 'bg-yellow-500'
+                        : 'bg-green-500'
+                    }`}
+                    style={{ width: `${effectiveAiPercentage}%` }}
+                  />
                 </div>
               </div>
 
@@ -283,53 +316,47 @@ export const VideoAnalysis = ({ onNavigate }: VideoAnalysisProps) => {
                     )}
                   </p>
                 )}
-                {result.classification && (
-                  <p className="text-neutral-gray text-sm mt-3">
-                    <strong>Classification:</strong> {result.classification}
-                  </p>
-                )}
-                {(result.aiPercentage !== undefined || result.humanPercentage !== undefined) && (
-                  <div className="flex flex-wrap gap-4 mt-2 text-sm">
-                    {result.aiPercentage !== undefined && (
-                      <p className={`font-semibold ${result.aiPercentage >= 70 ? 'text-red-400' : result.aiPercentage >= 40 ? 'text-yellow-400' : 'text-green-400'}`}>
-                        AI Percentage: {result.aiPercentage}%
-                      </p>
-                    )}
-                    {result.humanPercentage !== undefined && (
-                      <p className="text-neutral-gray">
-                        Human Percentage: {result.humanPercentage}%
-                      </p>
-                    )}
-                  </div>
-                )}
               </div>
 
               <div className="mb-6 border-t border-primary-purple/30 pt-6">
                 <h3 className="text-lg font-semibold text-neutral-white mb-4">
-                  File Metadata
+                  Video Analysis Indicators
                 </h3>
                 <div className="space-y-3">
-                  {result.signals.map((signal, index) => (
-                    <div key={index} className="bg-primary-bg rounded-lg p-4">
-                      <div className="flex items-start gap-3">
-                        <Minus size={20} className="flex-shrink-0 mt-0.5 text-neutral-gray" />
-                        <div className="flex-1">
-                          <h4 className="text-neutral-white font-medium text-sm mb-1">
-                            {signal.name}
-                          </h4>
-                          <p className="text-neutral-gray text-sm">
-                            {signal.value}
-                          </p>
+                  {result.signals.map((signal, index) => {
+                    const SignalIcon = getSignalIcon(signal.impact);
+
+                    return (
+                      <div key={index} className="bg-primary-bg rounded-lg p-4">
+                        <div className="flex items-start gap-3">
+                          <SignalIcon
+                            size={20}
+                            className={`flex-shrink-0 mt-0.5 ${
+                              signal.impact === 'increased'
+                                ? 'text-red-400'
+                                : signal.impact === 'decreased'
+                                ? 'text-green-400'
+                                : 'text-neutral-gray'
+                            }`}
+                          />
+                          <div className="flex-1">
+                            <h4 className="text-neutral-white font-medium text-sm mb-1">
+                              {signal.name}
+                            </h4>
+                            <p className="text-neutral-gray text-sm">
+                              {signal.value}
+                            </p>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
 
               <div className="border-t border-primary-purple/30 pt-6">
                 <h3 className="text-lg font-semibold text-neutral-white mb-3">
-                  Limitations
+                  Analysis Limitations
                 </h3>
                 <ul className="text-neutral-gray text-sm space-y-2 list-disc list-inside">
                   {result.limitations.map((limitation, index) => (
@@ -338,6 +365,7 @@ export const VideoAnalysis = ({ onNavigate }: VideoAnalysisProps) => {
                 </ul>
               </div>
             </Card>
+          </>
         )}
       </div>
     </div>

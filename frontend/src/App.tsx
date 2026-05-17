@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { LanguageProvider } from './contexts/LanguageContext';
 import { SubscriptionProvider } from './contexts/SubscriptionContext';
+import { ToastProvider } from './contexts/ToastContext';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { Landing } from './pages/Landing';
 import { SignUp } from './pages/SignUp';
@@ -99,11 +100,13 @@ function App() {
     <ErrorBoundary>
       <ThemeProvider>
         <LanguageProvider>
-          <AuthProvider>
-            <SubscriptionProvider>
-              <AppContent />
-            </SubscriptionProvider>
-          </AuthProvider>
+          <ToastProvider>
+            <AuthProvider>
+              <SubscriptionProvider>
+                <AppContent />
+              </SubscriptionProvider>
+            </AuthProvider>
+          </ToastProvider>
         </LanguageProvider>
       </ThemeProvider>
     </ErrorBoundary>

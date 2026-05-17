@@ -3,6 +3,7 @@ import { ArrowLeft, FileText, Image, Video, Music, Calendar, TrendingUp } from '
 import { Logo } from '../components/Logo';
 import { Card } from '../components/Card';
 import { useAuth } from '../contexts/AuthContext';
+import { useToast } from '../contexts/ToastContext';
 import { AnalysisHistory, fetchAnalysisHistory } from '../lib/api';
 
 interface HistoryProps {
@@ -11,6 +12,7 @@ interface HistoryProps {
 
 export const History = ({ onNavigate }: HistoryProps) => {
   const { user } = useAuth();
+  const { addToast } = useToast();
   const [history, setHistory] = useState<AnalysisHistory[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'text' | 'image' | 'video' | 'audio'>('all');
@@ -31,6 +33,11 @@ export const History = ({ onNavigate }: HistoryProps) => {
       setHistory(data || []);
     } catch (error) {
       console.error('Error loading history:', error);
+      addToast({
+        type: 'error',
+        title: 'Unable to load history',
+        description: 'Please refresh the page or sign in again.',
+      });
     } finally {
       setLoading(false);
     }

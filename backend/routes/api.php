@@ -22,11 +22,10 @@ Route::post('/analyze-text', [AnalysisController::class, 'analyzeText']);
 Route::post('/analyze-audio', [AnalysisController::class, 'analyzeAudio']);
 Route::post('/analyze-video', [AnalysisController::class, 'analyzeVideo']);
 Route::post('/analyze-social-post', [AnalysisController::class, 'analyzeSocialPost']);
-Route::post('/hive/task-async', [AnalysisController::class, 'submitHiveTaskAsync']);
-Route::get('/hive/task-summary', [AnalysisController::class, 'getHiveTaskSummary']);
 
 // Social OAuth Routes
 Route::get('/auth/{provider}/redirect', [SocialAuthController::class, 'redirectToProvider']);
 Route::get('/auth/{provider}/callback', [SocialAuthController::class, 'handleProviderCallback']);
 Route::get('/social/accounts', [SocialAuthController::class, 'getConnectedAccounts']);
+Route::delete('/social/accounts/{accountId}', [SocialAuthController::class, 'disconnectAccount']);
 Route::get('/social/posts', [AnalysisController::class, 'getConnectedPosts']);

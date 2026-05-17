@@ -4,12 +4,15 @@ import {
   FileText,
   Loader2,
   AlertTriangle,
+  TrendingUp,
+  TrendingDown,
 } from 'lucide-react';
 import { Logo } from '../components/Logo';
-import { getAnalysisStatusConfig, getAnalysisPercentageTextColor, getSignalIcon, getSignalClassName } from '../lib/analysisUi';
+import { getSignalIcon } from '../lib/analysisUi';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { useAuth } from '../contexts/AuthContext';
+import { useToast } from '../contexts/ToastContext';
 import { analyzeTextContent } from '../lib/analyzeTextContent';
 import { saveAnalysisHistory } from '../lib/api';
 import { AnalysisResult } from '../lib/types';
@@ -20,6 +23,7 @@ interface TextAnalysisProps {
 
 export const TextAnalysis = ({ onNavigate }: TextAnalysisProps) => {
   const { user } = useAuth();
+  const { addToast } = useToast();
   const [text, setText] = useState('');
   const [analyzing, setAnalyzing] = useState(false);
   const [result, setResult] = useState<AnalysisResult | null>(null);
@@ -36,7 +40,7 @@ export const TextAnalysis = ({ onNavigate }: TextAnalysisProps) => {
       if (user) {
         const wordCount = text.split(/\s+/).filter((w) => w.length > 0).length;
 
-          await saveAnalysisHistory({
+        await saveAnalysisHistory({
           media_type: 'text',
           content: text.substring(0, 500),
           result_status: analysisResult.label.toUpperCase(),
@@ -51,14 +55,27 @@ export const TextAnalysis = ({ onNavigate }: TextAnalysisProps) => {
       }
     } catch (error) {
       console.error('Text analysis failed:', error);
-      alert('Text analysis failed. Please try again.');
+      addToast({
+        type: 'error',
+        title: 'Text analysis failed',
+        description: 'Please try again or refresh the page.',
+      });
     } finally {
       setAnalyzing(false);
     }
   };
 
-  const getStatusConfig = (aiPercentage: number) => getAnalysisStatusConfig(aiPercentage);
-  // use imported `getSignalIcon` from ../lib/analysisUi directly
+  const getColorByPercentage = (aiPercentage: number) => {
+    if (aiPercentage >= 70) return { bg: 'bg-red-500/20', border: 'border-red-500', text: 'text-red-400' };
+    if (aiPercentage >= 40) return { bg: 'bg-yellow-500/20', border: 'border-yellow-500', text: 'text-yellow-400' };
+    return { bg: 'bg-green-500/20', border: 'border-green-500', text: 'text-green-400' };
+  };
+
+  const getStatusLabel = (aiPercentage: number) => {
+    if (aiPercentage >= 70) return 'High AI Probability';
+    if (aiPercentage >= 40) return 'Medium AI Probability';
+    return 'Low AI Probability';
+  };
 
   return (
     <div className="min-h-screen bg-primary-bg">
@@ -139,60 +156,63 @@ export const TextAnalysis = ({ onNavigate }: TextAnalysisProps) => {
 
         {result && (
           <>
-            <Card className={`p-6 mb-6 border-2 ${getStatusConfig(result.aiPercentage ?? result.score).borderColor} ${getStatusConfig(result.aiPercentage ?? result.score).bgColor}`}>
+            <Card className={`p-6 mb-6 border-2 ${getColorByPercentage(result.aiPercentage ?? result.score).border} ${getColorByPercentage(result.aiPercentage ?? result.score).bg}`}>
               <p className="text-neutral-gray text-sm leading-relaxed">
-                <strong>Analysis Notice:</strong> This result is a confirmed classification based on detected patterns. The {result.score}% score reflects analysis confidence.
+                <strong>Analysis Result:</strong> AI Percentage: <strong className={getColorByPercentage(result.aiPercentage ?? result.score).text}>{result.aiPercentage ?? result.score}%</strong> | Human Percentage: <strong className={getColorByPercentage(result.aiPercentage ?? result.score).text}>{result.humanPercentage ?? Math.max(0, 100 - result.score)}%</strong>
               </p>
             </Card>
 
-            <Card className={`p-8 border-2 ${getStatusConfig(result.aiPercentage ?? result.score).borderColor} ${getStatusConfig(result.aiPercentage ?? result.score).bgColor}`}>
+            <Card className={`p-8 border-2 ${getColorByPercentage(result.aiPercentage ?? result.score).border} ${getColorByPercentage(result.aiPercentage ?? result.score).bg}`}>
               <div className="flex items-start gap-4 mb-6">
-                {(() => {
-                  const StatusIcon = getStatusConfig(result.aiPercentage ?? result.score).icon;
-                  return <StatusIcon className={getStatusConfig(result.aiPercentage ?? result.score).color} size={32} />;
-                })()}
+                {(result.aiPercentage ?? result.score) >= 70 ? (
+                  <TrendingUp className={getColorByPercentage(result.aiPercentage ?? result.score).text} size={32} />
+                ) : (result.aiPercentage ?? result.score) >= 40 ? (
+                  <TrendingUp className={getColorByPercentage(result.aiPercentage ?? result.score).text} size={32} />
+                ) : (
+                  <TrendingDown className={getColorByPercentage(result.aiPercentage ?? result.score).text} size={32} />
+                )}
 
                 <div className="flex-1">
                   <h2 className="text-2xl font-bold text-neutral-white mb-2">
-                    Confirmed AI Assistance: {getStatusConfig(result.aiPercentage ?? result.score).label}
+                    {getStatusLabel(result.aiPercentage ?? result.score)}
                   </h2>
 
                   <div className="flex items-center gap-4 mb-4 flex-wrap">
-                    <div>
-                      <p className="text-neutral-gray text-sm">Prediction</p>
-                      <p className={`text-3xl font-bold ${getStatusConfig(result.aiPercentage ?? result.score).color}`}>
+                    <div className="bg-primary-bg rounded-lg p-4 flex-1 min-w-[200px]">
+                      <p className="text-neutral-gray text-sm mb-1">Classification</p>
+                      <p className={`text-2xl font-bold ${getColorByPercentage(result.aiPercentage ?? result.score).text}`}>
                         {result.classification ?? (result.score > 50 ? 'AI-generated' : 'Human-written')}
                       </p>
                     </div>
 
-                    <div>
-                      <p className="text-neutral-gray text-sm">AI Confidence</p>
-                      <p className={`text-2xl font-bold ${getStatusConfig(result.aiPercentage ?? result.score).color}`}>
+                    <div className="bg-primary-bg rounded-lg p-4 flex-1 min-w-[200px]">
+                      <p className="text-neutral-gray text-sm mb-1">AI Percentage</p>
+                      <p className={`text-3xl font-bold ${getColorByPercentage(result.aiPercentage ?? result.score).text}`}>
                         {result.aiPercentage ?? result.score}%
                       </p>
                     </div>
 
-                    <div>
-                      <p className="text-neutral-gray text-sm">Human Confidence</p>
-                      <p className={`text-2xl font-bold ${getStatusConfig(result.aiPercentage ?? result.score).color}`}>
+                    <div className="bg-primary-bg rounded-lg p-4 flex-1 min-w-[200px]">
+                      <p className="text-neutral-gray text-sm mb-1">Human Percentage</p>
+                      <p className={`text-3xl font-bold ${getColorByPercentage(result.aiPercentage ?? result.score).text}`}>
                         {result.humanPercentage ?? Math.max(0, 100 - result.score)}%
                       </p>
                     </div>
+                  </div>
 
-                    <div className="flex-1 min-w-[240px]">
-                      <p className="text-neutral-gray text-sm mb-2">Score Bar</p>
-                      <div className="w-full bg-primary-bg rounded-full h-3">
-                        <div
-                          className={`h-3 rounded-full ${
-                            result.label === 'High'
-                              ? 'bg-red-400'
-                              : result.label === 'Medium'
-                              ? 'bg-yellow-400'
-                              : 'bg-green-400'
-                          }`}
-                          style={{ width: `${result.aiPercentage ?? result.score}%` }}
-                        />
-                      </div>
+                  <div className="mt-4">
+                    <p className="text-neutral-gray text-sm mb-2">Confidence Score</p>
+                    <div className="w-full bg-primary-bg rounded-full h-4 overflow-hidden">
+                      <div
+                        className={`h-4 rounded-full transition-all duration-500 ${
+                          (result.aiPercentage ?? result.score) >= 70
+                            ? 'bg-red-500'
+                            : (result.aiPercentage ?? result.score) >= 40
+                            ? 'bg-yellow-500'
+                            : 'bg-green-500'
+                        }`}
+                        style={{ width: `${result.aiPercentage ?? result.score}%` }}
+                      />
                     </div>
                   </div>
                 </div>

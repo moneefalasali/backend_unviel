@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, Share2, Loader2, AlertCircle, CheckCircle2, Globe, Twitter, Linkedin, Instagram, ExternalLink, BarChart3, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Share2, Loader2, AlertCircle, CheckCircle2, Globe, Twitter, Linkedin, Instagram, ExternalLink, BarChart3, RefreshCw, Trash2 } from 'lucide-react';
 import { Logo } from '../components/Logo';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
@@ -48,6 +48,20 @@ export const SocialAnalysis = ({ onNavigate }: SocialAnalysisProps) => {
     window.location.href = `${API_BASE_URL}/auth/${provider}/redirect`;
   };
 
+  const disconnectAccount = async (accountId: string) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/social/accounts/${accountId}`, {
+        method: 'DELETE',
+      });
+      
+      if (response.ok) {
+        setConnectedAccounts(connectedAccounts.filter(acc => acc.id !== accountId));
+      }
+    } catch (err) {
+      console.error("Failed to disconnect account", err);
+    }
+  };
+
   const analyzePost = async () => {
     if (!url) return;
     
@@ -91,6 +105,16 @@ export const SocialAnalysis = ({ onNavigate }: SocialAnalysisProps) => {
       setAnalyzing(false);
     }
   };
+
+  const getColorByPercentage = (aiPercentage: number) => {
+    if (aiPercentage >= 70) return { bg: 'bg-red-500/5', border: 'border-red-500', text: 'text-red-400' };
+    if (aiPercentage >= 40) return { bg: 'bg-yellow-500/5', border: 'border-yellow-500', text: 'text-yellow-400' };
+    return { bg: 'bg-green-500/5', border: 'border-green-500', text: 'text-green-400' };
+  };
+
+  const aiPercentage = result?.ai_percentage ?? result?.ai_percentage ?? 0;
+  const humanPercentage = result?.human_percentage ?? result?.human_percentage ?? (100 - aiPercentage);
+  const colors = getColorByPercentage(aiPercentage);
 
   return (
     <div className="min-h-screen bg-primary-bg">
@@ -190,7 +214,12 @@ export const SocialAnalysis = ({ onNavigate }: SocialAnalysisProps) => {
                           <p className="text-neutral-gray text-xs capitalize">{acc.platform}</p>
                         </div>
                       </div>
-                      <div className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]" />
+                      <button
+                        onClick={() => disconnectAccount(acc.id)}
+                        className="text-neutral-gray hover:text-red-400 transition-colors"
+                      >
+                        <Trash2 size={16} />
+                      </button>
                     </Card>
                   ))}
                 </div>
@@ -200,13 +229,23 @@ export const SocialAnalysis = ({ onNavigate }: SocialAnalysisProps) => {
 
           {/* Right Column: Dashboard & Results */}
           <div className="lg:col-span-2 space-y-8">
+            {error && (
+              <Card className="p-4 bg-red-500/10 border-2 border-red-500 flex items-start gap-3">
+                <AlertCircle className="text-red-400 flex-shrink-0 mt-1" size={20} />
+                <div>
+                  <p className="text-red-400 font-semibold">Analysis Error</p>
+                  <p className="text-neutral-gray text-sm">{error}</p>
+                </div>
+              </Card>
+            )}
+
             {result ? (
               <section>
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-2xl font-bold text-neutral-white">Analysis Result</h2>
                   <Button variant="outline" size="sm" onClick={() => setResult(null)}>Clear</Button>
                 </div>
-                <Card className={`p-8 border-2 ${result.overall_ai_probability > 50 ? 'border-red-500 bg-red-500/5' : 'border-green-500 bg-green-500/5'}`}>
+                <Card className={`p-8 border-2 ${colors.border} ${colors.bg}`}>
                   <div className="flex items-start justify-between mb-8">
                     <div>
                       <div className="flex items-center gap-3 mb-2">
@@ -221,7 +260,7 @@ export const SocialAnalysis = ({ onNavigate }: SocialAnalysisProps) => {
                     </div>
                     <div className="text-right">
                       <p className="text-neutral-gray text-sm mb-1">Confidence Score</p>
-                      <p className="text-2xl font-bold text-accent-gold">
+                      <p className={`text-2xl font-bold ${colors.text}`}>
                         {Math.round(result.confidence * 100)}%
                       </p>
                     </div>
@@ -230,25 +269,37 @@ export const SocialAnalysis = ({ onNavigate }: SocialAnalysisProps) => {
                   <div className="grid md:grid-cols-2 gap-8 mb-8">
                     <div>
                       <div className="flex justify-between mb-2">
-                        <span className="text-neutral-white font-medium">AI Confidence</span>
-                        <span className="text-accent-gold font-bold">{result.overall_ai_probability}%</span>
+                        <span className="text-neutral-white font-medium">AI Percentage</span>
+                        <span className={`font-bold ${colors.text}`}>{aiPercentage}%</span>
                       </div>
                       <div className="w-full bg-primary-dark rounded-full h-3">
                         <div
-                          className="h-3 rounded-full bg-accent-gold transition-all duration-1000"
-                          style={{ width: `${result.overall_ai_probability}%` }}
+                          className={`h-3 rounded-full transition-all duration-1000 ${
+                            aiPercentage >= 70
+                              ? 'bg-red-500'
+                              : aiPercentage >= 40
+                              ? 'bg-yellow-500'
+                              : 'bg-green-500'
+                          }`}
+                          style={{ width: `${aiPercentage}%` }}
                         />
                       </div>
                     </div>
                     <div>
                       <div className="flex justify-between mb-2">
-                        <span className="text-neutral-white font-medium">Human Confidence</span>
-                        <span className="text-green-400 font-bold">{result.human_probability}%</span>
+                        <span className="text-neutral-white font-medium">Human Percentage</span>
+                        <span className={`font-bold ${colors.text}`}>{humanPercentage}%</span>
                       </div>
                       <div className="w-full bg-primary-dark rounded-full h-3">
                         <div
-                          className="h-3 rounded-full bg-green-400 transition-all duration-1000"
-                          style={{ width: `${result.human_probability}%` }}
+                          className={`h-3 rounded-full transition-all duration-1000 ${
+                            humanPercentage >= 60
+                              ? 'bg-green-500'
+                              : humanPercentage >= 40
+                              ? 'bg-yellow-500'
+                              : 'bg-red-500'
+                          }`}
+                          style={{ width: `${humanPercentage}%` }}
                         />
                       </div>
                     </div>
@@ -276,33 +327,71 @@ export const SocialAnalysis = ({ onNavigate }: SocialAnalysisProps) => {
                   </div>
                 ) : connectedPosts.length > 0 ? (
                   <div className="space-y-4">
-                    {connectedPosts.map((post) => (
-                      <Card key={post.id} className="p-6 hover:border-primary-purple/50 transition-all">
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-3">
-                              <span className="text-xs font-bold text-primary-purple uppercase">{post.platform}</span>
-                              <span className="text-neutral-gray text-xs">• {post.created_at}</span>
-                            </div>
-                            <p className="text-neutral-white mb-4 line-clamp-2">{post.content}</p>
-                            <div className="flex items-center gap-6">
-                              <div className="flex items-center gap-2">
-                                <div className="w-24 bg-primary-dark h-2 rounded-full overflow-hidden">
-                                  <div className="bg-accent-gold h-full" style={{ width: `${post.overall_ai_probability}%` }} />
-                                </div>
-                                <span className="text-xs text-neutral-gray">AI: {post.overall_ai_probability}%</span>
+                    {connectedPosts.map((post) => {
+                      const postAiPercentage = post.ai_percentage ?? post.ai_percentage ?? 0;
+                      const postHumanPercentage = post.human_percentage ?? post.human_percentage ?? (100 - postAiPercentage);
+                      const postColors = getColorByPercentage(postAiPercentage);
+                      
+                      return (
+                        <Card key={post.id} className={`p-6 hover:border-primary-purple/50 transition-all border-2 ${postColors.border}`}>
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-3">
+                                <span className="text-xs font-bold text-primary-purple uppercase">{post.platform}</span>
+                                <span className="text-neutral-gray text-xs">• {post.created_at}</span>
                               </div>
-                              <span className={`text-xs font-bold px-2 py-1 rounded ${post.overall_ai_probability > 50 ? 'bg-red-500/10 text-red-400' : 'bg-green-500/10 text-green-400'}`}>
-                                {post.classification}
-                              </span>
+                              <p className="text-neutral-white mb-4 line-clamp-2">{post.content}</p>
+                              <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                  <div className="flex justify-between mb-2">
+                                    <span className="text-neutral-gray text-xs">AI Percentage</span>
+                                    <span className={`text-xs font-bold ${postColors.text}`}>{postAiPercentage}%</span>
+                                  </div>
+                                  <div className="w-full bg-primary-dark h-2 rounded-full overflow-hidden">
+                                    <div 
+                                      className={`h-full ${
+                                        postAiPercentage >= 70
+                                          ? 'bg-red-500'
+                                          : postAiPercentage >= 40
+                                          ? 'bg-yellow-500'
+                                          : 'bg-green-500'
+                                      }`} 
+                                      style={{ width: `${postAiPercentage}%` }} 
+                                    />
+                                  </div>
+                                </div>
+                                <div>
+                                  <div className="flex justify-between mb-2">
+                                    <span className="text-neutral-gray text-xs">Human Percentage</span>
+                                    <span className={`text-xs font-bold ${postColors.text}`}>{postHumanPercentage}%</span>
+                                  </div>
+                                  <div className="w-full bg-primary-dark h-2 rounded-full overflow-hidden">
+                                    <div 
+                                      className={`h-full ${
+                                        postHumanPercentage >= 60
+                                          ? 'bg-green-500'
+                                          : postHumanPercentage >= 40
+                                          ? 'bg-yellow-500'
+                                          : 'bg-red-500'
+                                      }`} 
+                                      style={{ width: `${postHumanPercentage}%` }} 
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="mt-3">
+                                <span className={`text-xs font-bold px-2 py-1 rounded ${postAiPercentage > 50 ? 'bg-red-500/10 text-red-400' : 'bg-green-500/10 text-green-400'}`}>
+                                  {post.classification}
+                                </span>
+                              </div>
                             </div>
+                            <Button variant="outline" size="sm" className="shrink-0">
+                              <ExternalLink size={14} />
+                            </Button>
                           </div>
-                          <Button variant="outline" size="sm" className="shrink-0">
-                            <ExternalLink size={14} />
-                          </Button>
-                        </div>
-                      </Card>
-                    ))}
+                        </Card>
+                      );
+                    })}
                   </div>
                 ) : (
                   <Card className="p-12 text-center">
