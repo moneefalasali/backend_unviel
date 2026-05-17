@@ -1,4 +1,4 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL?.trim() || 'http://localhost:8000/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL?.trim() || 'https://backend-un-main-41ghqe.laravel.cloud/api';
 const API_ROOT_URL = API_BASE_URL.replace(/\/api\/?$/, '');
 const AUTH_TOKEN_KEY = 'unveil_api_token';
 const DEFAULT_TIMEOUT = 15000;
@@ -97,6 +97,12 @@ const getCsrfCookie = async (): Promise<void> => {
   }
 };
 
+const getCookie = (name: string): string | null => {
+  if (!isBrowser) return null;
+  const match = document.cookie.match(new RegExp('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)'));
+  return match ? decodeURIComponent(match[2]) : null;
+};
+
 const getErrorMessage = (payload: any, defaultMessage: string): string => {
   if (!payload) return defaultMessage;
   if (typeof payload === 'string') return payload;
@@ -148,6 +154,14 @@ const request = async <T>(
       const token = getAuthToken();
       if (token) {
         (headers as Record<string, string>).Authorization = `Bearer ${token}`;
+      }
+    }
+
+    const method = ((options.method || 'GET') as string).toUpperCase();
+    if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
+      const xsrf = getCookie('XSRF-TOKEN');
+      if (xsrf) {
+        (headers as Record<string, string>)['X-XSRF-TOKEN'] = xsrf;
       }
     }
 
