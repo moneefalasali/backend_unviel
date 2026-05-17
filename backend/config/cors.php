@@ -19,10 +19,10 @@ return [
 
     'allowed_origins' => explode(',', env(
         'CORS_ALLOWED_ORIGINS',
-        'https://unveil-eta.vercel.app,http://localhost:5173,http://127.0.0.1:5173'
+        'https://unveil-eta.vercel.app,https://unveil-cj6lfyxsk-unviel-s-projects.vercel.app,http://localhost:5173,http://127.0.0.1:5173'
     )),
 
-    'allowed_origins_patterns' => [],
+    'allowed_origins_patterns' => ['^https:\/\/.*\.vercel\.app$'],
 
     'allowed_headers' => ['Content-Type', 'Accept', 'Authorization', 'X-Requested-With', 'X-CSRF-TOKEN'],
 

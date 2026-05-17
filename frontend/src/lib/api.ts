@@ -1,4 +1,5 @@
 const API_BASE_URL = import.meta.env.VITE_API_URL?.trim() || 'http://localhost:8000/api';
+const API_ROOT_URL = API_BASE_URL.replace(/\/api\/?$/, '');
 const AUTH_TOKEN_KEY = 'unveil_api_token';
 const DEFAULT_TIMEOUT = 15000;
 const DEFAULT_RETRY_COUNT = 2;
@@ -79,8 +80,9 @@ const parseJson = (text: string): unknown => {
 };
 
 const getCsrfCookie = async (): Promise<void> => {
-  const url = `${API_BASE_URL}/sanctum/csrf-cookie`;
-  await fetch(url, {
+  const url = `${API_ROOT_URL}/sanctum/csrf-cookie`;
+
+  const response = await fetch(url, {
     method: 'GET',
     credentials: 'include',
     mode: 'cors',
@@ -89,6 +91,10 @@ const getCsrfCookie = async (): Promise<void> => {
       'X-Requested-With': 'XMLHttpRequest',
     },
   });
+
+  if (!response.ok) {
+    throw new ApiError(`Unable to fetch CSRF cookie: ${response.status}`, response.status);
+  }
 };
 
 const getErrorMessage = (payload: any, defaultMessage: string): string => {
