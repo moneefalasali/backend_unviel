@@ -5,6 +5,7 @@ import { Select } from '../components/Select';
 import { Checkbox } from '../components/Checkbox';
 import { Button } from '../components/Button';
 import { useAuth } from '../contexts/AuthContext';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface SignUpProps {
   onNavigate: (page: string) => void;
@@ -12,6 +13,7 @@ interface SignUpProps {
 
 export const SignUp = ({ onNavigate }: SignUpProps) => {
   const { signUp } = useAuth();
+  const { t } = useLanguage();
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -61,42 +63,53 @@ export const SignUp = ({ onNavigate }: SignUpProps) => {
 
         <div className="bg-primary-dark rounded-2xl shadow-2xl p-8">
           <h2 className="text-2xl font-bold text-neutral-white mb-2 text-center">
-            Create Your Account
+            {t('createYourAccount')}
           </h2>
           <p className="text-neutral-gray text-center mb-8">
-            Join Unveil to start detecting AI-generated content
+            {t('joinToStart')}
           </p>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form autoComplete="on" onSubmit={handleSubmit} className="space-y-5">
             <Input
-              label="Full Name"
+              id="signup-full-name"
+              name="fullName"
+              label={t('fullName')}
               type="text"
-              placeholder="Enter your full name"
+              placeholder={t('fullName')}
+              autoComplete="name"
               required
               value={formData.fullName}
               onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
             />
 
             <Input
-              label="Email Address"
+              id="signup-email"
+              name="email"
+              label={t('emailAddress')}
               type="email"
-              placeholder="Enter your email"
+              placeholder={t('emailAddress')}
+              autoComplete="email"
               required
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
             />
 
             <Input
-              label="Password"
+              id="signup-password"
+              name="password"
+              label={t('password')}
               type="password"
-              placeholder="Create a strong password"
+              placeholder={t('password')}
+              autoComplete="new-password"
               required
               value={formData.password}
               onChange={(e) => setFormData({ ...formData, password: e.target.value })}
             />
 
             <Select
-              label="Gender"
+              id="signup-gender"
+              name="gender"
+              label={t('gender')}
               required
               value={formData.gender}
               onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
@@ -109,9 +122,11 @@ export const SignUp = ({ onNavigate }: SignUpProps) => {
             />
 
             <Input
-              label="Age"
+              id="signup-age"
+              name="age"
+              label={t('age')}
               type="number"
-              placeholder="Enter your age"
+              placeholder={t('age')}
               required
               min="13"
               max="120"
@@ -121,12 +136,12 @@ export const SignUp = ({ onNavigate }: SignUpProps) => {
 
             <div className="space-y-3 pt-2">
               <Checkbox
-                label="I agree to the Terms of Service"
+                label={t('agreeTerms')}
                 checked={termsAccepted}
                 onChange={(e) => setTermsAccepted(e.target.checked)}
               />
               <Checkbox
-                label="I agree to the Privacy Policy"
+                label={t('agreePrivacy')}
                 checked={privacyAccepted}
                 onChange={(e) => setPrivacyAccepted(e.target.checked)}
               />
@@ -139,17 +154,17 @@ export const SignUp = ({ onNavigate }: SignUpProps) => {
             )}
 
             <Button type="submit" fullWidth disabled={loading}>
-              {loading ? 'Creating Account...' : 'Create Account'}
+              {loading ? `${t('createAccount')}...` : t('createAccount')}
             </Button>
           </form>
 
           <p className="text-neutral-gray text-center mt-6 text-sm">
-            Already have an account?{' '}
+            {t('alreadyHaveAccount')}{' '}
             <button
               onClick={() => onNavigate('login')}
               className="text-accent-gold hover:text-yellow-500 font-medium transition-colors"
             >
-              Log In
+              {t('login')}
             </button>
           </p>
         </div>

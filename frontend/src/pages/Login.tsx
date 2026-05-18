@@ -3,6 +3,7 @@ import { Logo } from '../components/Logo';
 import { Input } from '../components/Input';
 import { Button } from '../components/Button';
 import { useAuth } from '../contexts/AuthContext';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface LoginProps {
   onNavigate: (page: string) => void;
@@ -10,6 +11,7 @@ interface LoginProps {
 
 export const Login = ({ onNavigate }: LoginProps) => {
   const { signIn } = useAuth();
+  const { t } = useLanguage();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
@@ -41,26 +43,32 @@ export const Login = ({ onNavigate }: LoginProps) => {
 
         <div className="bg-primary-dark rounded-2xl shadow-2xl p-8">
           <h2 className="text-2xl font-bold text-neutral-white mb-2 text-center">
-            Welcome Back
+            {t('welcome')}
           </h2>
           <p className="text-neutral-gray text-center mb-8">
-            Log in to continue detecting AI content
+            {t('loginPrompt')}
           </p>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form autoComplete="on" onSubmit={handleSubmit} className="space-y-5">
             <Input
-              label="Email Address"
+              id="login-email"
+              name="email"
+              label={t('emailAddress')}
               type="email"
-              placeholder="Enter your email"
+              placeholder={t('emailAddress')}
+              autoComplete="email"
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
 
             <Input
-              label="Password"
+              id="login-password"
+              name="password"
+              label={t('password')}
               type="password"
-              placeholder="Enter your password"
+              placeholder={t('password')}
+              autoComplete="current-password"
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -74,15 +82,15 @@ export const Login = ({ onNavigate }: LoginProps) => {
                   onChange={(e) => setRememberMe(e.target.checked)}
                   className="w-4 h-4 rounded border-2 border-primary-purple bg-primary-bg text-accent-gold focus:ring-2 focus:ring-accent-lavender cursor-pointer"
                 />
-                <span className="text-neutral-gray text-sm">Remember me</span>
+                <span className="text-neutral-gray text-sm">{t('rememberMe')}</span>
               </label>
 
               <button
                 type="button"
-                onClick={() => setError('Password reset coming soon!')}
+                onClick={() => setError(t('forgotPassword'))}
                 className="text-accent-gold hover:text-yellow-500 text-sm font-medium transition-colors"
               >
-                Forgot Password?
+                {t('forgotPassword')}
               </button>
             </div>
 
@@ -93,17 +101,17 @@ export const Login = ({ onNavigate }: LoginProps) => {
             )}
 
             <Button type="submit" fullWidth disabled={loading}>
-              {loading ? 'Logging in...' : 'Log In'}
+              {loading ? t('loggingIn') : t('login')}
             </Button>
           </form>
 
           <p className="text-neutral-gray text-center mt-6 text-sm">
-            Don't have an account?{' '}
+            {t('dontHaveAccount')}{' '}
             <button
               onClick={() => onNavigate('signup')}
               className="text-accent-gold hover:text-yellow-500 font-medium transition-colors"
             >
-              Sign Up
+              {t('signUp')}
             </button>
           </p>
         </div>

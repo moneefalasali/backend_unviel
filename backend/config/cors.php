@@ -24,7 +24,7 @@ return [
 
     'allowed_origins_patterns' => ['^https:\/\/.*\.vercel\.app$'],
 
-    'allowed_headers' => ['Content-Type', 'Accept', 'Authorization', 'X-Requested-With', 'X-CSRF-TOKEN'],
+    'allowed_headers' => ['Content-Type', 'Accept', 'Authorization', 'X-Requested-With', 'X-CSRF-TOKEN', 'X-XSRF-TOKEN'],
 
     'exposed_headers' => ['Authorization'],
 

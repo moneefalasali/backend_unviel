@@ -43,7 +43,7 @@ function AppContent() {
       return;
     }
 
-    if (user && currentPage === 'landing') {
+    if (user && ['landing', 'login', 'signup'].includes(currentPage)) {
       setCurrentPage('dashboard');
     } else if (!user && !['landing', 'signup', 'login'].includes(currentPage)) {
       setCurrentPage('landing');
